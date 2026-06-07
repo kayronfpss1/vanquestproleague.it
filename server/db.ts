@@ -1,11 +1,10 @@
-import { eq } from "drizzle-orm";
+import { eq, desc, asc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import { InsertUser, users, teams, matches, eloHistory, staffLogs, InsertTeam, InsertMatch, InsertEloHistory, InsertStaffLog } from "../drizzle/schema";
+import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -18,26 +17,17 @@ export async function getDb() {
   return _db;
 }
 
+// ─── Auth helpers ─────────────────────────────────────────────────────────────
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-
+  if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
-  }
+  if (!db) { console.warn("[Database] Cannot upsert user: database not available"); return; }
 
   try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
+    const values: InsertUser = { openId: user.openId };
     const updateSet: Record<string, unknown> = {};
-
     const textFields = ["name", "email", "loginMethod"] as const;
     type TextField = (typeof textFields)[number];
-
     const assignNullable = (field: TextField) => {
       const value = user[field];
       if (value === undefined) return;
@@ -45,32 +35,13 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       values[field] = normalized;
       updateSet[field] = normalized;
     };
-
     textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
+    if (user.lastSignedIn !== undefined) { values.lastSignedIn = user.lastSignedIn; updateSet.lastSignedIn = user.lastSignedIn; }
+    if (user.role !== undefined) { values.role = user.role; updateSet.role = user.role; }
+    else if (user.openId === ENV.ownerOpenId) { values.role = "admin"; updateSet.role = "admin"; }
+    if (!values.lastSignedIn) values.lastSignedIn = new Date();
+    if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
+    await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
@@ -79,14 +50,249 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
+  if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// ─── ELO calculation ─────────────────────────────────────────────────────────
+export const ELO_START = 1500;
+export const ELO_K = 32;
+
+export function calculateEloChange(winnerElo: number, loserElo: number): number {
+  const expected = 1 / (1 + Math.pow(10, (loserElo - winnerElo) / 400));
+  return Math.round(ELO_K * (1 - expected));
+}
+
+// ─── Teams ────────────────────────────────────────────────────────────────────
+export async function getAllTeams() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(teams).orderBy(desc(teams.elo));
+}
+
+export async function getTeamById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(teams).where(eq(teams.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getTeamByName(name: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(teams).where(eq(teams.name, name)).limit(1);
+  return result[0];
+}
+
+export async function createTeam(name: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(teams).values({ name, elo: ELO_START });
+  const created = await getTeamByName(name);
+  if (!created) throw new Error("Team creation failed");
+  // Record initial elo history
+  await db.insert(eloHistory).values({ teamId: created.id, elo: ELO_START });
+  return created;
+}
+
+export async function updateTeam(id: number, data: Partial<InsertTeam>) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(teams).set(data).where(eq(teams.id, id));
+  return getTeamById(id);
+}
+
+export async function deleteTeam(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(eloHistory).where(eq(eloHistory.teamId, id));
+  await db.delete(teams).where(eq(teams.id, id));
+}
+
+export async function getTeamStats() {
+  const db = await getDb();
+  if (!db) return { totalTeams: 0 };
+  const result = await db.select({ count: sql<number>`count(*)` }).from(teams);
+  return { totalTeams: result[0]?.count ?? 0 };
+}
+
+// ─── Matches ─────────────────────────────────────────────────────────────────
+export async function getAllMatches(limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(matches).orderBy(desc(matches.createdAt)).limit(limit);
+}
+
+export async function getMatchById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(matches).where(eq(matches.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getMatchesByTeamId(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(matches)
+    .where(sql`${matches.winnerId} = ${teamId} OR ${matches.loserId} = ${teamId}`)
+    .orderBy(desc(matches.createdAt));
+}
+
+export async function addMatch(winnerId: number, loserId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+
+  const winner = await getTeamById(winnerId);
+  const loser = await getTeamById(loserId);
+  if (!winner || !loser) throw new Error("Team not found");
+
+  const eloChange = calculateEloChange(winner.elo, loser.elo);
+
+  // Insert match record
+  await db.insert(matches).values({
+    winnerId,
+    loserId,
+    winnerName: winner.name,
+    loserName: loser.name,
+    winnerEloBefore: winner.elo,
+    loserEloBefore: loser.elo,
+    eloChange,
+  });
+
+  // Get the inserted match id
+  const [lastMatch] = await db
+    .select()
+    .from(matches)
+    .orderBy(desc(matches.createdAt))
+    .limit(1);
+
+  const matchId = lastMatch?.id;
+
+  // Update winner
+  const newWinnerElo = winner.elo + eloChange;
+  const newWinnerStreak = winner.streak >= 0 ? winner.streak + 1 : 1;
+  const newWinnerBestStreak = Math.max(winner.bestStreak, newWinnerStreak);
+  await db.update(teams).set({
+    wins: winner.wins + 1,
+    elo: newWinnerElo,
+    streak: newWinnerStreak,
+    bestStreak: newWinnerBestStreak,
+  }).where(eq(teams.id, winnerId));
+
+  // Update loser
+  const newLoserElo = loser.elo - eloChange;
+  const newLoserStreak = loser.streak <= 0 ? loser.streak - 1 : -1;
+  await db.update(teams).set({
+    losses: loser.losses + 1,
+    elo: newLoserElo,
+    streak: newLoserStreak,
+  }).where(eq(teams.id, loserId));
+
+  // Record elo history for both teams
+  await db.insert(eloHistory).values([
+    { teamId: winnerId, elo: newWinnerElo, matchId },
+    { teamId: loserId, elo: newLoserElo, matchId },
+  ]);
+
+  return lastMatch;
+}
+
+export async function removeMatch(matchId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+
+  const match = await getMatchById(matchId);
+  if (!match) throw new Error("Match not found");
+
+  const winner = await getTeamById(match.winnerId);
+  const loser = await getTeamById(match.loserId);
+
+  // Revert winner stats
+  if (winner) {
+    const revertedWinnerElo = match.winnerEloBefore;
+    const revertedStreak = winner.streak > 0 ? winner.streak - 1 : 0;
+    await db.update(teams).set({
+      wins: Math.max(0, winner.wins - 1),
+      elo: revertedWinnerElo,
+      streak: revertedStreak,
+    }).where(eq(teams.id, match.winnerId));
+  }
+
+  // Revert loser stats
+  if (loser) {
+    const revertedLoserElo = match.loserEloBefore;
+    const revertedStreak = loser.streak < 0 ? loser.streak + 1 : 0;
+    await db.update(teams).set({
+      losses: Math.max(0, loser.losses - 1),
+      elo: revertedLoserElo,
+      streak: revertedStreak,
+    }).where(eq(teams.id, match.loserId));
+  }
+
+  // Remove elo history entries for this match
+  await db.delete(eloHistory).where(eq(eloHistory.matchId, matchId));
+
+  // Delete the match
+  await db.delete(matches).where(eq(matches.id, matchId));
+
+  return match;
+}
+
+export async function getMatchStats() {
+  const db = await getDb();
+  if (!db) return { totalMatches: 0 };
+  const result = await db.select({ count: sql<number>`count(*)` }).from(matches);
+  return { totalMatches: result[0]?.count ?? 0 };
+}
+
+// ─── Elo History ─────────────────────────────────────────────────────────────
+export async function getEloHistoryByTeamId(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(eloHistory)
+    .where(eq(eloHistory.teamId, teamId))
+    .orderBy(asc(eloHistory.recordedAt));
+}
+
+// ─── Staff Logs ───────────────────────────────────────────────────────────────
+export async function addStaffLog(entry: InsertStaffLog) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(staffLogs).values(entry);
+}
+
+export async function getStaffLogs(limit = 200) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(staffLogs).orderBy(desc(staffLogs.createdAt)).limit(limit);
+}
+
+// ─── Leaderboard ─────────────────────────────────────────────────────────────
+export async function getLeaderboardByElo(limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(teams).orderBy(desc(teams.elo)).limit(limit);
+}
+
+export async function getLeaderboardByWins(limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(teams).orderBy(desc(teams.wins), desc(teams.elo)).limit(limit);
+}
+
+export async function getLeaderboardByKd(limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  const allTeams = await db.select().from(teams).orderBy(desc(teams.wins)).limit(limit);
+  // Sort by KD ratio: wins / max(1, losses)
+  return allTeams.sort((a, b) => {
+    const kdA = a.wins / Math.max(1, a.losses);
+    const kdB = b.wins / Math.max(1, b.losses);
+    return kdB - kdA;
+  });
+}

@@ -1,0 +1,428 @@
+import { useState } from "react";
+import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { getLoginUrl } from "@/const";
+import { toast } from "sonner";
+import {
+  Shield, Plus, Trash2, Edit3, Swords, Trophy, TrendingDown, TrendingUp,
+  AlertTriangle, RotateCcw, ClipboardList, Users, ChevronDown, ChevronUp, Lock
+} from "lucide-react";
+import { TableSkeleton } from "@/components/EsportUI";
+
+type Tab = "teams" | "matches" | "logs";
+
+export default function StaffDashboard() {
+  const { user, isAuthenticated, loading } = useAuth();
+  const [activeTab, setActiveTab] = useState<Tab>("teams");
+
+  // ─── Auth gate ──────────────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-grid pt-24 flex items-center justify-center">
+        <div className="shimmer w-64 h-12 rounded-xl" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-grid pt-24 pb-16 flex items-center justify-center">
+        <div className="card-premium p-10 text-center max-w-md w-full animate-scale-in">
+          <div className="w-16 h-16 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto mb-6">
+            <Lock className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-2xl font-display font-800 text-foreground mb-2">STAFF ACCESS REQUIRED</h2>
+          <p className="text-muted-foreground font-sans mb-8">You must be logged in with staff privileges to access this dashboard.</p>
+          <a href={getLoginUrl()}>
+            <button className="w-full px-6 py-3 rounded-xl font-display font-700 tracking-widest text-sm bg-primary hover:bg-primary/90 text-primary-foreground transition-all glow-purple">
+              LOGIN TO CONTINUE
+            </button>
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (user?.role !== "admin") {
+    return (
+      <div className="min-h-screen bg-grid pt-24 pb-16 flex items-center justify-center">
+        <div className="card-premium p-10 text-center max-w-md w-full animate-scale-in">
+          <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-6" />
+          <h2 className="text-2xl font-display font-800 text-foreground mb-2">ACCESS DENIED</h2>
+          <p className="text-muted-foreground font-sans">Your account does not have staff privileges.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const tabs = [
+    { id: "teams" as Tab, label: "TEAM MANAGEMENT", icon: Users },
+    { id: "matches" as Tab, label: "MATCH MANAGEMENT", icon: Swords },
+    { id: "logs" as Tab, label: "STAFF LOGS", icon: ClipboardList },
+  ];
+
+  return (
+    <div className="min-h-screen bg-grid pt-24 pb-16">
+      <div className="container">
+        {/* Header */}
+        <div className="mb-8 animate-fade-in-up">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-secondary/20 border border-secondary/30">
+              <Shield className="w-5 h-5 text-secondary" />
+            </div>
+            <div>
+              <p className="text-xs font-display tracking-widest text-secondary uppercase">Staff Panel</p>
+              <h1 className="text-3xl md:text-4xl font-display font-900 text-foreground">DASHBOARD</h1>
+            </div>
+          </div>
+          <p className="text-muted-foreground font-sans">Logged in as <span className="text-foreground font-600">{user.name}</span> — all actions are automatically logged.</p>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex gap-2 mb-8 flex-wrap animate-fade-in-up delay-100">
+          {tabs.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setActiveTab(id)}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-display font-700 tracking-widest transition-all duration-200 ${
+                activeTab === id
+                  ? "bg-secondary text-secondary-foreground"
+                  : "border border-border text-muted-foreground hover:text-foreground hover:border-secondary/40 hover:bg-accent"
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="animate-fade-in">
+          {activeTab === "teams" && <TeamManagement />}
+          {activeTab === "matches" && <MatchManagement />}
+          {activeTab === "logs" && <StaffLogs />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Team Management ──────────────────────────────────────────────────────────
+function TeamManagement() {
+  const utils = trpc.useUtils();
+  const { data: teams, isLoading } = trpc.teams.list.useQuery();
+  const [newTeamName, setNewTeamName] = useState("");
+  const [editingTeam, setEditingTeam] = useState<number | null>(null);
+  const [editElo, setEditElo] = useState("");
+  const [editEloReason, setEditEloReason] = useState("");
+  const [penalty, setPenalty] = useState("");
+  const [penaltyReason, setPenaltyReason] = useState("");
+  const [penaltyTeamId, setPenaltyTeamId] = useState<number | null>(null);
+
+  const createTeam = trpc.teams.create.useMutation({
+    onSuccess: () => { utils.teams.list.invalidate(); setNewTeamName(""); toast.success("Team created successfully!"); },
+    onError: (e) => toast.error(e.message),
+  });
+  const deleteTeam = trpc.teams.delete.useMutation({
+    onSuccess: () => { utils.teams.list.invalidate(); toast.success("Team deleted."); },
+    onError: (e) => toast.error(e.message),
+  });
+  const editEloMutation = trpc.teams.editElo.useMutation({
+    onSuccess: () => { utils.teams.list.invalidate(); setEditingTeam(null); setEditElo(""); setEditEloReason(""); toast.success("Elo updated!"); },
+    onError: (e) => toast.error(e.message),
+  });
+  const applyPenalty = trpc.teams.applyPenalty.useMutation({
+    onSuccess: () => { utils.teams.list.invalidate(); setPenaltyTeamId(null); setPenalty(""); setPenaltyReason(""); toast.success("Penalty applied!"); },
+    onError: (e) => toast.error(e.message),
+  });
+  const addWin = trpc.teams.addWin.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Win added."); }, onError: (e) => toast.error(e.message) });
+  const removeWin = trpc.teams.removeWin.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Win removed."); }, onError: (e) => toast.error(e.message) });
+  const addLoss = trpc.teams.addLoss.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Loss added."); }, onError: (e) => toast.error(e.message) });
+  const removeLoss = trpc.teams.removeLoss.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Loss removed."); }, onError: (e) => toast.error(e.message) });
+
+  return (
+    <div className="space-y-6">
+      {/* Create Team */}
+      <div className="card-premium p-6">
+        <h3 className="text-lg font-display font-700 text-foreground mb-4 flex items-center gap-2">
+          <Plus className="w-5 h-5 text-primary" /> CREATE TEAM
+        </h3>
+        <div className="flex gap-3">
+          <input
+            type="text"
+            placeholder="Team name..."
+            value={newTeamName}
+            onChange={e => setNewTeamName(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && newTeamName.trim() && createTeam.mutate({ name: newTeamName.trim() })}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-input border border-border focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground font-sans transition-all"
+          />
+          <button
+            onClick={() => newTeamName.trim() && createTeam.mutate({ name: newTeamName.trim() })}
+            disabled={!newTeamName.trim() || createTeam.isPending}
+            className="px-5 py-2.5 rounded-xl font-display font-700 tracking-widest text-sm bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            {createTeam.isPending ? "..." : "CREATE"}
+          </button>
+        </div>
+      </div>
+
+      {/* Teams Table */}
+      <div className="card-premium overflow-hidden">
+        <div className="px-6 py-4 border-b border-border/50">
+          <h3 className="text-lg font-display font-700 text-foreground">REGISTERED TEAMS</h3>
+        </div>
+        {isLoading ? (
+          <div className="p-5"><TableSkeleton rows={5} /></div>
+        ) : teams?.length === 0 ? (
+          <div className="py-12 text-center text-muted-foreground font-sans">No teams yet. Create one above.</div>
+        ) : (
+          teams?.map((team, i) => (
+            <div key={team.id} className="border-b border-border/20 last:border-0 animate-fade-in" style={{ animationDelay: `${i * 30}ms` }}>
+              <div className="flex flex-wrap items-center gap-3 px-5 py-4">
+                {/* Team info */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="w-9 h-9 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-display font-800 text-primary">{team.name.charAt(0).toUpperCase()}</span>
+                  </div>
+                  <div>
+                    <p className="font-display font-700 text-foreground">{team.name}</p>
+                    <p className="text-xs text-muted-foreground font-sans">{team.elo} ELO · {team.wins}W {team.losses}L</p>
+                  </div>
+                </div>
+
+                {/* Quick actions */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <button onClick={() => addWin.mutate({ id: team.id })} title="Add Win" className="p-2 rounded-lg bg-win/10 text-win hover:bg-win/20 border border-win/20 transition-all text-xs font-display font-700">+W</button>
+                  <button onClick={() => removeWin.mutate({ id: team.id })} title="Remove Win" className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent border border-border transition-all text-xs font-display font-700">-W</button>
+                  <button onClick={() => addLoss.mutate({ id: team.id })} title="Add Loss" className="p-2 rounded-lg bg-loss/10 text-loss hover:bg-loss/20 border border-loss/20 transition-all text-xs font-display font-700">+L</button>
+                  <button onClick={() => removeLoss.mutate({ id: team.id })} title="Remove Loss" className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent border border-border transition-all text-xs font-display font-700">-L</button>
+                  <button onClick={() => { setEditingTeam(editingTeam === team.id ? null : team.id); setEditElo(String(team.elo)); }} className="flex items-center gap-1 px-3 py-2 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 border border-secondary/20 transition-all text-xs font-display font-700">
+                    <Edit3 className="w-3.5 h-3.5" /> ELO
+                  </button>
+                  <button onClick={() => { setPenaltyTeamId(penaltyTeamId === team.id ? null : team.id); }} className="flex items-center gap-1 px-3 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 transition-all text-xs font-display font-700">
+                    <AlertTriangle className="w-3.5 h-3.5" /> PENALTY
+                  </button>
+                  <button onClick={() => { if (confirm(`Delete team "${team.name}"?`)) deleteTeam.mutate({ id: team.id }); }} className="p-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 transition-all">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Edit Elo panel */}
+              {editingTeam === team.id && (
+                <div className="px-5 pb-4 pt-0 border-t border-border/30 bg-muted/20 animate-fade-in">
+                  <p className="text-xs font-display tracking-widest text-secondary uppercase mb-3 mt-3">EDIT ELO — {team.name}</p>
+                  <div className="flex flex-wrap gap-3">
+                    <input type="number" value={editElo} onChange={e => setEditElo(e.target.value)} className="w-32 px-3 py-2 rounded-lg bg-input border border-border focus:border-secondary/50 focus:outline-none text-foreground font-display font-700 transition-all" />
+                    <input type="text" placeholder="Reason (optional)..." value={editEloReason} onChange={e => setEditEloReason(e.target.value)} className="flex-1 min-w-48 px-3 py-2 rounded-lg bg-input border border-border focus:border-secondary/50 focus:outline-none text-foreground placeholder:text-muted-foreground font-sans transition-all" />
+                    <button onClick={() => editEloMutation.mutate({ id: team.id, elo: parseInt(editElo), reason: editEloReason || undefined })} disabled={!editElo || editEloMutation.isPending} className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground font-display font-700 text-sm disabled:opacity-50 transition-all">
+                      {editEloMutation.isPending ? "..." : "APPLY"}
+                    </button>
+                    <button onClick={() => setEditingTeam(null)} className="px-4 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground font-display font-700 text-sm transition-all">CANCEL</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Penalty panel */}
+              {penaltyTeamId === team.id && (
+                <div className="px-5 pb-4 pt-0 border-t border-border/30 bg-destructive/5 animate-fade-in">
+                  <p className="text-xs font-display tracking-widest text-destructive uppercase mb-3 mt-3">APPLY PENALTY — {team.name}</p>
+                  <div className="flex flex-wrap gap-3">
+                    <input type="number" placeholder="Elo penalty..." value={penalty} onChange={e => setPenalty(e.target.value)} className="w-36 px-3 py-2 rounded-lg bg-input border border-border focus:border-destructive/50 focus:outline-none text-foreground font-display font-700 transition-all" />
+                    <input type="text" placeholder="Reason (optional)..." value={penaltyReason} onChange={e => setPenaltyReason(e.target.value)} className="flex-1 min-w-48 px-3 py-2 rounded-lg bg-input border border-border focus:border-destructive/50 focus:outline-none text-foreground placeholder:text-muted-foreground font-sans transition-all" />
+                    <button onClick={() => applyPenalty.mutate({ id: team.id, penalty: parseInt(penalty), reason: penaltyReason || undefined })} disabled={!penalty || applyPenalty.isPending} className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground font-display font-700 text-sm disabled:opacity-50 transition-all">
+                      {applyPenalty.isPending ? "..." : "APPLY"}
+                    </button>
+                    <button onClick={() => setPenaltyTeamId(null)} className="px-4 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground font-display font-700 text-sm transition-all">CANCEL</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Match Management ─────────────────────────────────────────────────────────
+function MatchManagement() {
+  const utils = trpc.useUtils();
+  const { data: teams } = trpc.teams.list.useQuery();
+  const { data: matches, isLoading } = trpc.matches.list.useQuery({ limit: 100 });
+  const [winnerId, setWinnerId] = useState("");
+  const [loserId, setLoserId] = useState("");
+
+  const addMatch = trpc.matches.add.useMutation({
+    onSuccess: () => {
+      utils.matches.list.invalidate();
+      utils.teams.list.invalidate();
+      utils.leaderboard.byElo.invalidate();
+      utils.leaderboard.byWins.invalidate();
+      utils.leaderboard.byKd.invalidate();
+      utils.stats.global.invalidate();
+      setWinnerId(""); setLoserId("");
+      toast.success("Match added! Elo updated automatically.");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const removeMatch = trpc.matches.remove.useMutation({
+    onSuccess: () => {
+      utils.matches.list.invalidate();
+      utils.teams.list.invalidate();
+      utils.leaderboard.byElo.invalidate();
+      toast.success("Match removed and Elo reverted.");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const undoMatch = trpc.matches.undo.useMutation({
+    onSuccess: () => {
+      utils.matches.list.invalidate();
+      utils.teams.list.invalidate();
+      utils.leaderboard.byElo.invalidate();
+      toast.success("Match undone! Elo reverted.");
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const canAdd = winnerId && loserId && winnerId !== loserId;
+
+  return (
+    <div className="space-y-6">
+      {/* Add Match */}
+      <div className="card-premium p-6">
+        <h3 className="text-lg font-display font-700 text-foreground mb-4 flex items-center gap-2">
+          <Swords className="w-5 h-5 text-primary" /> ADD MATCH RESULT
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr_auto] gap-3 items-end">
+          <div>
+            <label className="text-xs font-display tracking-widest text-win uppercase mb-2 block">Winner</label>
+            <select value={winnerId} onChange={e => setWinnerId(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-input border border-border focus:border-win/50 focus:outline-none text-foreground font-sans transition-all">
+              <option value="">Select winner...</option>
+              {teams?.map(t => <option key={t.id} value={t.id}>{t.name} ({t.elo} ELO)</option>)}
+            </select>
+          </div>
+          <div className="flex items-center justify-center pb-1">
+            <span className="text-muted-foreground font-display font-700 text-sm">VS</span>
+          </div>
+          <div>
+            <label className="text-xs font-display tracking-widest text-loss uppercase mb-2 block">Loser</label>
+            <select value={loserId} onChange={e => setLoserId(e.target.value)} className="w-full px-4 py-2.5 rounded-xl bg-input border border-border focus:border-loss/50 focus:outline-none text-foreground font-sans transition-all">
+              <option value="">Select loser...</option>
+              {teams?.filter(t => String(t.id) !== winnerId).map(t => <option key={t.id} value={t.id}>{t.name} ({t.elo} ELO)</option>)}
+            </select>
+          </div>
+          <button
+            onClick={() => canAdd && addMatch.mutate({ winnerId: parseInt(winnerId), loserId: parseInt(loserId) })}
+            disabled={!canAdd || addMatch.isPending}
+            className="px-6 py-2.5 rounded-xl font-display font-700 tracking-widest text-sm bg-primary hover:bg-primary/90 text-primary-foreground disabled:opacity-50 disabled:cursor-not-allowed transition-all glow-purple"
+          >
+            {addMatch.isPending ? "..." : "ADD MATCH"}
+          </button>
+        </div>
+        {winnerId && loserId && winnerId !== loserId && (() => {
+          const w = teams?.find(t => String(t.id) === winnerId);
+          const l = teams?.find(t => String(t.id) === loserId);
+          if (!w || !l) return null;
+          const expected = 1 / (1 + Math.pow(10, (l.elo - w.elo) / 400));
+          const change = Math.round(32 * (1 - expected));
+          return (
+            <div className="mt-4 p-3 rounded-lg bg-muted/50 border border-border/50 flex flex-wrap gap-4 text-sm font-display">
+              <span className="text-muted-foreground">Elo preview:</span>
+              <span className="text-win">{w.name}: {w.elo} → {w.elo + change} <span className="text-xs">(+{change})</span></span>
+              <span className="text-loss">{l.name}: {l.elo} → {l.elo - change} <span className="text-xs">(-{change})</span></span>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Match List */}
+      <div className="card-premium overflow-hidden">
+        <div className="px-6 py-4 border-b border-border/50">
+          <h3 className="text-lg font-display font-700 text-foreground">RECENT MATCHES</h3>
+        </div>
+        {isLoading ? (
+          <div className="p-5"><TableSkeleton rows={5} /></div>
+        ) : matches?.length === 0 ? (
+          <div className="py-12 text-center text-muted-foreground font-sans">No matches yet.</div>
+        ) : (
+          matches?.map((match, i) => (
+            <div key={match.id} className="flex flex-wrap items-center gap-3 px-5 py-4 border-b border-border/20 last:border-0 table-row-hover animate-fade-in" style={{ animationDelay: `${i * 20}ms` }}>
+              <span className="text-xs font-display text-muted-foreground w-10">#{match.id}</span>
+              <div className="flex-1 flex items-center gap-2 min-w-0">
+                <Trophy className="w-3.5 h-3.5 text-secondary flex-shrink-0" />
+                <span className="font-display font-700 text-win truncate">{match.winnerName}</span>
+                <span className="text-muted-foreground text-xs font-display flex-shrink-0">VS</span>
+                <span className="font-display font-500 text-muted-foreground truncate">{match.loserName}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-win font-display font-700 text-sm">+{match.eloChange}</span>
+                <span className="text-xs text-muted-foreground hidden sm:block">{new Date(match.createdAt).toLocaleDateString("it-IT")}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => { if (confirm(`Undo match #${match.id}?`)) undoMatch.mutate({ id: match.id }); }} title="Undo match" className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 border border-secondary/20 transition-all text-xs font-display font-700">
+                  <RotateCcw className="w-3.5 h-3.5" /> UNDO
+                </button>
+                <button onClick={() => { if (confirm(`Delete match #${match.id}?`)) removeMatch.mutate({ id: match.id }); }} title="Delete match" className="p-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 transition-all">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Staff Logs ───────────────────────────────────────────────────────────────
+function StaffLogs() {
+  const { data: logs, isLoading } = trpc.staffLogs.list.useQuery({ limit: 200 });
+
+  const actionColors: Record<string, string> = {
+    ADD_MATCH: "text-win bg-win/10 border-win/30",
+    REMOVE_MATCH: "text-loss bg-loss/10 border-loss/30",
+    UNDO_MATCH: "text-secondary bg-secondary/10 border-secondary/30",
+    CREATE_TEAM: "text-primary bg-primary/10 border-primary/30",
+    DELETE_TEAM: "text-destructive bg-destructive/10 border-destructive/30",
+    UPDATE_TEAM: "text-foreground bg-muted border-border",
+    EDIT_ELO: "text-secondary bg-secondary/10 border-secondary/30",
+    APPLY_PENALTY: "text-destructive bg-destructive/10 border-destructive/30",
+    ADD_WIN: "text-win bg-win/10 border-win/30",
+    REMOVE_WIN: "text-muted-foreground bg-muted border-border",
+    ADD_LOSS: "text-loss bg-loss/10 border-loss/30",
+    REMOVE_LOSS: "text-muted-foreground bg-muted border-border",
+  };
+
+  return (
+    <div className="card-premium overflow-hidden">
+      <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+        <h3 className="text-lg font-display font-700 text-foreground">STAFF ACTION LOG</h3>
+        <span className="text-xs text-muted-foreground font-sans">{logs?.length ?? 0} entries</span>
+      </div>
+      {isLoading ? (
+        <div className="p-5"><TableSkeleton rows={8} /></div>
+      ) : logs?.length === 0 ? (
+        <div className="py-12 text-center text-muted-foreground font-sans">No staff actions logged yet.</div>
+      ) : (
+        logs?.map((log, i) => (
+          <div key={log.id} className="flex flex-wrap items-start gap-3 px-5 py-4 border-b border-border/20 last:border-0 animate-fade-in" style={{ animationDelay: `${Math.min(i * 20, 300)}ms` }}>
+            <span className="text-xs font-display text-muted-foreground w-10 flex-shrink-0 mt-0.5">#{log.id}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2 mb-1">
+                <span className={`stat-badge border text-xs ${actionColors[log.action] ?? "text-foreground bg-muted border-border"}`}>{log.action}</span>
+                <span className="text-sm font-display font-600 text-foreground">{log.staffName}</span>
+              </div>
+              <p className="text-sm text-muted-foreground font-sans">{log.details}</p>
+            </div>
+            <span className="text-xs text-muted-foreground font-sans flex-shrink-0">
+              {new Date(log.createdAt).toLocaleString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })}
+            </span>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
