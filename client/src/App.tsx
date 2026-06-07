@@ -11,6 +11,7 @@ import Teams from "./pages/Teams";
 import TeamDetail from "./pages/TeamDetail";
 import MatchHistory from "./pages/MatchHistory";
 import StaffDashboard from "./pages/StaffDashboard";
+import AdminPanel from "./pages/AdminPanel";
 
 function Router() {
   return (
@@ -23,6 +24,7 @@ function Router() {
         <Route path="/team/:id" component={TeamDetail} />
         <Route path="/matches" component={MatchHistory} />
         <Route path="/staff" component={StaffDashboard} />
+        <Route path="/admin" component={AdminPanel} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

@@ -53,16 +53,30 @@ export default function NavBar() {
               </Link>
             ))}
             {isAuthenticated && (
-              <Link href="/staff">
-                <button className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-sans font-600 tracking-wide transition-all duration-200 ${
-                  isActive("/staff")
-                    ? "bg-secondary/20 text-secondary border border-secondary/30"
-                    : "text-muted-foreground hover:text-secondary hover:bg-secondary/10"
-                }`}>
-                  <Shield className="w-4 h-4" />
-                  Staff
-                </button>
-              </Link>
+              <>
+                <Link href="/staff">
+                  <button className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-sans font-600 tracking-wide transition-all duration-200 ${
+                    isActive("/staff")
+                      ? "bg-secondary/20 text-secondary border border-secondary/30"
+                      : "text-muted-foreground hover:text-secondary hover:bg-secondary/10"
+                  }`}>
+                    <Shield className="w-4 h-4" />
+                    Staff
+                  </button>
+                </Link>
+                {user?.role === "admin" && (
+                  <Link href="/admin">
+                    <button className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-sans font-600 tracking-wide transition-all duration-200 ${
+                      isActive("/admin")
+                        ? "bg-destructive/20 text-destructive border border-destructive/30"
+                        : "text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    }`}>
+                      <Shield className="w-4 h-4" />
+                      Admin
+                    </button>
+                  </Link>
+                )}
+              </>
             )}
           </div>
 
@@ -120,12 +134,22 @@ export default function NavBar() {
               </Link>
             ))}
             {isAuthenticated && (
-              <Link href="/staff" onClick={() => setMobileOpen(false)}>
-                <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans font-600 tracking-wide text-muted-foreground hover:text-secondary hover:bg-secondary/10 transition-all">
-                  <Shield className="w-4 h-4" />
-                  Staff Dashboard
-                </button>
-              </Link>
+              <>
+                <Link href="/staff" onClick={() => setMobileOpen(false)}>
+                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans font-600 tracking-wide text-muted-foreground hover:text-secondary hover:bg-secondary/10 transition-all">
+                    <Shield className="w-4 h-4" />
+                    Staff Dashboard
+                  </button>
+                </Link>
+                {user?.role === "admin" && (
+                  <Link href="/admin" onClick={() => setMobileOpen(false)}>
+                    <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans font-600 tracking-wide text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all">
+                      <Shield className="w-4 h-4" />
+                      Admin Panel
+                    </button>
+                  </Link>
+                )}
+              </>
             )}
             <div className="pt-3 border-t border-border/50">
               {isAuthenticated ? (

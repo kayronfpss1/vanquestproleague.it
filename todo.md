@@ -14,9 +14,11 @@
 - [x] stats router: global tournament stats
 - [x] staff router: protected procedures for all management actions (addWin, removeWin, addLoss, removeLoss, editElo, applyPenalty)
 - [x] staff_logs router: list logs (protected)
+- [x] admin router: users (list all), setUserRole (promote/demote)
 - [x] Elo system: K=32, start 1500, standard formula
 - [x] adminProcedure guard: role=admin required for all staff actions
-- [x] Automatic staff logging on every action
+- [x] superAdminProcedure guard: role=admin required for user management
+- [x] Automatic staff logging on every action (including role changes)
 
 ## Frontend Pages
 - [x] Global CSS theme: black/purple/gold palette, Orbitron/Rajdhani fonts
@@ -28,6 +30,7 @@
 - [x] Match History page: table with ID, winner, loser, elo change, date, search
 - [x] Staff Dashboard: team CRUD, match add/remove/undo, manual Elo edit, penalty
 - [x] Staff Logs viewer (protected, admin only)
+- [x] Admin Panel: user role management (promote/demote staff)
 - [x] Responsive layout (mobile + desktop)
 - [x] Animations and micro-interactions (fade-in-up, shimmer, pulse, glow)
 - [x] NavBar with auth state and mobile menu

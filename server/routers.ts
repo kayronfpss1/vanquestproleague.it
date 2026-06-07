@@ -23,6 +23,8 @@ import {
   getLeaderboardByKd,
   addStaffLog,
   getStaffLogs,
+  getAllUsers,
+  updateUserRole,
   ELO_START,
   ELO_K,
   calculateEloChange,
@@ -32,6 +34,14 @@ import {
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") {
     throw new TRPCError({ code: "FORBIDDEN", message: "Staff access required" });
+  }
+  return next({ ctx });
+});
+
+// ─── Super Admin guard (only owner) ───────────────────────────────────────────
+const superAdminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== "admin") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
   }
   return next({ ctx });
 });
@@ -285,6 +295,21 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().min(1).max(500).optional() }).optional())
       .query(async ({ input }) => {
         return getStaffLogs(input?.limit ?? 200);
+      }),
+  }),
+
+  // ─── Admin: User Management ───────────────────────────────────────────────────
+  admin: router({
+    users: superAdminProcedure.query(async () => {
+      return getAllUsers();
+    }),
+
+    setUserRole: superAdminProcedure
+      .input(z.object({ userId: z.number(), role: z.enum(["admin", "user"]) }))
+      .mutation(async ({ input, ctx }) => {
+        await updateUserRole(input.userId, input.role);
+        await logStaff(ctx, "UPDATE_USER_ROLE", `Set ${input.role === "admin" ? "admin" : "user"} role for user ID ${input.userId}`);
+        return { success: true };
       }),
   }),
 });

@@ -55,6 +55,18 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+export async function getAllUsers() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(users).orderBy(users.createdAt);
+}
+
+export async function updateUserRole(userId: number, role: "admin" | "user") {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(users).set({ role }).where(eq(users.id, userId));
+}
+
 // ─── ELO calculation ─────────────────────────────────────────────────────────
 export const ELO_START = 1500;
 export const ELO_K = 32;
