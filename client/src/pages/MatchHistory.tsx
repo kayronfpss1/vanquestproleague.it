@@ -6,7 +6,7 @@ import { Link } from "wouter";
 
 export default function MatchHistory() {
   const [search, setSearch] = useState("");
-  const { data: matches, isLoading } = trpc.matches.list.useQuery({ limit: 500 });
+  const { data: matches, isLoading } = trpc.matches.list.useQuery();
 
   const filtered = matches?.filter(m =>
     m.winnerName.toLowerCase().includes(search.toLowerCase()) ||

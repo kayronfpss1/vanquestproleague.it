@@ -4,7 +4,7 @@ import { Trophy, Swords, Users, TrendingUp, ChevronRight, Zap, Shield } from "lu
 import { StatCard, RankBadge, EloBadge, StreakBadge, KdRatio, LiveIndicator, TableSkeleton, CardSkeleton } from "@/components/EsportUI";
 
 export default function Home() {
-  const { data: top10, isLoading: loadingLb } = trpc.leaderboard.byElo.useQuery({ limit: 10 }, { refetchInterval: 15000 });
+  const { data: top10, isLoading: loadingLb } = trpc.leaderboard.byElo.useQuery(undefined, { refetchInterval: 15000 });
   const { data: stats, isLoading: loadingStats } = trpc.stats.global.useQuery(undefined, { refetchInterval: 15000 });
 
   return (

@@ -401,3 +401,9 @@ export async function updateApiKeyLastUsed(keyId: number) {
   if (!db) return;
   await db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, keyId));
 }
+
+export async function deleteApiKeyById(keyId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(apiKeys).where(eq(apiKeys.id, keyId));
+}

@@ -9,9 +9,9 @@ type Tab = "elo" | "wins" | "kd";
 export default function Leaderboard() {
   const [activeTab, setActiveTab] = useState<Tab>("elo");
 
-  const { data: byElo, isLoading: loadingElo } = trpc.leaderboard.byElo.useQuery({ limit: 50 }, { refetchInterval: 15000 });
-  const { data: byWins, isLoading: loadingWins } = trpc.leaderboard.byWins.useQuery({ limit: 50 }, { refetchInterval: 15000 });
-  const { data: byKd, isLoading: loadingKd } = trpc.leaderboard.byKd.useQuery({ limit: 50 }, { refetchInterval: 15000 });
+  const { data: byElo, isLoading: loadingElo } = trpc.leaderboard.byElo.useQuery(undefined, { refetchInterval: 15000 });
+  const { data: byWins, isLoading: loadingWins } = trpc.leaderboard.byWins.useQuery(undefined, { refetchInterval: 15000 });
+  const { data: byKd, isLoading: loadingKd } = trpc.leaderboard.byKd.useQuery(undefined, { refetchInterval: 15000 });
 
   const tabs = [
     { id: "elo" as Tab, label: "ELO RANKING", icon: Trophy },

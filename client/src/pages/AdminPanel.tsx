@@ -1,13 +1,15 @@
 import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { Lock, Shield, User, AlertTriangle, Check, X } from "lucide-react";
+import { Lock, Shield, User, AlertTriangle, Check, X, Copy, Trash2, Plus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 export default function AdminPanel() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { data: user } = trpc.customAuth.me.useQuery();
+  const isAuthenticated = !!user;
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
+  const [showApiKeyForm, setShowApiKeyForm] = useState(false);
+  const [apiKeyName, setApiKeyName] = useState("");
 
   const { data: users, isLoading } = trpc.admin.users.useQuery(undefined, {
     enabled: isAuthenticated && user?.role === "admin",
@@ -22,8 +24,33 @@ export default function AdminPanel() {
     onError: (e) => toast.error(e.message),
   });
 
+  const { data: apiKeys, isLoading: apiKeysLoading } = trpc.apiKeys.list.useQuery();
+  
+  const createApiKey = trpc.apiKeys.create.useMutation({
+    onSuccess: (data) => {
+      trpc.useUtils().apiKeys.list.invalidate();
+      setShowApiKeyForm(false);
+      setApiKeyName("");
+      toast.success("API Key created! Copy it now - you won't see it again.");
+      // Show the key in a modal or alert
+      if (data.key) {
+        navigator.clipboard.writeText(data.key);
+        toast.success("API Key copied to clipboard!");
+      }
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteApiKey = trpc.apiKeys.delete.useMutation({
+    onSuccess: () => {
+      trpc.useUtils().apiKeys.list.invalidate();
+      toast.success("API Key deleted!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   // ─── Auth gate ──────────────────────────────────────────────────────────────
-  if (loading) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-grid pt-24 flex items-center justify-center">
         <div className="shimmer w-64 h-12 rounded-xl" />
@@ -40,11 +67,6 @@ export default function AdminPanel() {
           </div>
           <h2 className="text-2xl font-display font-800 text-foreground mb-2">LOGIN REQUIRED</h2>
           <p className="text-muted-foreground font-sans mb-8">You must be logged in to access the admin panel.</p>
-          <a href={getLoginUrl()}>
-            <button className="w-full px-6 py-3 rounded-xl font-display font-700 tracking-widest text-sm bg-primary hover:bg-primary/90 text-primary-foreground transition-all glow-purple">
-              LOGIN
-            </button>
-          </a>
         </div>
       </div>
     );

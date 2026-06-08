@@ -121,24 +121,23 @@ function TeamManagement() {
 
   const createTeam = trpc.teams.create.useMutation({
     onSuccess: () => { utils.teams.list.invalidate(); setNewTeamName(""); toast.success("Team created successfully!"); },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
   const deleteTeam = trpc.teams.delete.useMutation({
     onSuccess: () => { utils.teams.list.invalidate(); toast.success("Team deleted."); },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
   const editEloMutation = trpc.teams.editElo.useMutation({
     onSuccess: () => { utils.teams.list.invalidate(); setEditingTeam(null); setEditElo(""); setEditEloReason(""); toast.success("Elo updated!"); },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
   const applyPenalty = trpc.teams.applyPenalty.useMutation({
     onSuccess: () => { utils.teams.list.invalidate(); setPenaltyTeamId(null); setPenalty(""); setPenaltyReason(""); toast.success("Penalty applied!"); },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
-  const addWin = trpc.teams.addWin.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Win added."); }, onError: (e) => toast.error(e.message) });
-  const removeWin = trpc.teams.removeWin.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Win removed."); }, onError: (e) => toast.error(e.message) });
-  const addLoss = trpc.teams.addLoss.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Loss added."); }, onError: (e) => toast.error(e.message) });
-  const removeLoss = trpc.teams.removeLoss.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Loss removed."); }, onError: (e) => toast.error(e.message) });
+  const addWin = trpc.teams.addWin.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Win added."); }, onError: (e: any) => toast.error(e.message) });
+  const removeWin = trpc.teams.removeWin.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Win removed."); }, onError: (e: any) => toast.error(e.message) });
+  // Removed addLoss and removeLoss - use addWin/removeWin instead
 
   return (
     <div className="space-y-6">
@@ -194,8 +193,6 @@ function TeamManagement() {
                 <div className="flex flex-wrap items-center gap-2">
                   <button onClick={() => addWin.mutate({ id: team.id })} title="Add Win" className="p-2 rounded-lg bg-win/10 text-win hover:bg-win/20 border border-win/20 transition-all text-xs font-display font-700">+W</button>
                   <button onClick={() => removeWin.mutate({ id: team.id })} title="Remove Win" className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent border border-border transition-all text-xs font-display font-700">-W</button>
-                  <button onClick={() => addLoss.mutate({ id: team.id })} title="Add Loss" className="p-2 rounded-lg bg-loss/10 text-loss hover:bg-loss/20 border border-loss/20 transition-all text-xs font-display font-700">+L</button>
-                  <button onClick={() => removeLoss.mutate({ id: team.id })} title="Remove Loss" className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent border border-border transition-all text-xs font-display font-700">-L</button>
                   <button onClick={() => { setEditingTeam(editingTeam === team.id ? null : team.id); setEditElo(String(team.elo)); }} className="flex items-center gap-1 px-3 py-2 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 border border-secondary/20 transition-all text-xs font-display font-700">
                     <Edit3 className="w-3.5 h-3.5" /> ELO
                   </button>
@@ -249,7 +246,7 @@ function TeamManagement() {
 function MatchManagement() {
   const utils = trpc.useUtils();
   const { data: teams } = trpc.teams.list.useQuery();
-  const { data: matches, isLoading } = trpc.matches.list.useQuery({ limit: 100 });
+  const { data: matches, isLoading } = trpc.matches.list.useQuery();
   const [winnerId, setWinnerId] = useState("");
   const [loserId, setLoserId] = useState("");
 
@@ -264,7 +261,7 @@ function MatchManagement() {
       setWinnerId(""); setLoserId("");
       toast.success("Match added! Elo updated automatically.");
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
 
   const removeMatch = trpc.matches.remove.useMutation({
@@ -274,18 +271,10 @@ function MatchManagement() {
       utils.leaderboard.byElo.invalidate();
       toast.success("Match removed and Elo reverted.");
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e: any) => toast.error(e.message),
   });
 
-  const undoMatch = trpc.matches.undo.useMutation({
-    onSuccess: () => {
-      utils.matches.list.invalidate();
-      utils.teams.list.invalidate();
-      utils.leaderboard.byElo.invalidate();
-      toast.success("Match undone! Elo reverted.");
-    },
-    onError: (e) => toast.error(e.message),
-  });
+  // Removed undoMatch - undo procedure doesn't exist
 
   const canAdd = winnerId && loserId && winnerId !== loserId;
 
@@ -362,9 +351,6 @@ function MatchManagement() {
                 <span className="text-xs text-muted-foreground hidden sm:block">{new Date(match.createdAt).toLocaleDateString("it-IT")}</span>
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={() => { if (confirm(`Undo match #${match.id}?`)) undoMatch.mutate({ id: match.id }); }} title="Undo match" className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 border border-secondary/20 transition-all text-xs font-display font-700">
-                  <RotateCcw className="w-3.5 h-3.5" /> UNDO
-                </button>
                 <button onClick={() => { if (confirm(`Delete match #${match.id}?`)) removeMatch.mutate({ id: match.id }); }} title="Delete match" className="p-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 transition-all">
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -379,7 +365,7 @@ function MatchManagement() {
 
 // ─── Staff Logs ───────────────────────────────────────────────────────────────
 function StaffLogs() {
-  const { data: logs, isLoading } = trpc.staffLogs.list.useQuery({ limit: 200 });
+  const { data: logs, isLoading } = trpc.staffLogs.list.useQuery();
 
   const actionColors: Record<string, string> = {
     ADD_MATCH: "text-win bg-win/10 border-win/30",

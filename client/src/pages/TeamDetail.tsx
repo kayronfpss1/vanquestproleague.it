@@ -1,4 +1,4 @@
-import { useParams, Link } from "wouter";
+import { useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Trophy, ArrowLeft, Swords, TrendingUp, TrendingDown, Flame, Star, Shield } from "lucide-react";
 import { EloBadge, StreakBadge, KdRatio, WinRateBar, EloChange, TableSkeleton } from "@/components/EsportUI";
@@ -18,8 +18,8 @@ export default function TeamDetail() {
   const teamId = parseInt(id ?? "0");
 
   const { data: team, isLoading: loadingTeam } = trpc.teams.getById.useQuery({ id: teamId }, { enabled: !!teamId });
-  const { data: matchHistory, isLoading: loadingMatches } = trpc.matches.byTeam.useQuery({ teamId }, { enabled: !!teamId });
-  const { data: eloHistory, isLoading: loadingElo } = trpc.eloHistory.byTeam.useQuery({ teamId }, { enabled: !!teamId });
+  const { data: matchHistory, isLoading: loadingMatches } = trpc.matches.getByTeamId.useQuery({ teamId }, { enabled: !!teamId });
+  const { data: eloHistory, isLoading: loadingElo } = trpc.eloHistory.getByTeamId.useQuery({ teamId }, { enabled: !!teamId });
 
   if (loadingTeam) {
     return (
@@ -40,7 +40,7 @@ export default function TeamDetail() {
         <div className="text-center">
           <Trophy className="w-16 h-16 text-muted-foreground/20 mx-auto mb-4" />
           <h2 className="text-2xl font-display font-700 text-foreground mb-2">Team Not Found</h2>
-          <Link href="/teams"><button className="text-primary hover:underline font-sans">← Back to Teams</button></Link>
+          <button onClick={() => window.history.back()} className="text-primary hover:underline font-sans">← Back to Teams</button>
         </div>
       </div>
     );
@@ -51,7 +51,7 @@ export default function TeamDetail() {
   const winRate = total === 0 ? 0 : Math.round((team.wins / total) * 100);
 
   // Prepare chart data
-  const chartData = eloHistory?.map((entry, i) => ({
+  const chartData = eloHistory?.map((entry: any, i: number) => ({
     index: i + 1,
     elo: entry.elo,
     date: new Date(entry.recordedAt).toLocaleDateString("it-IT"),
@@ -73,11 +73,9 @@ export default function TeamDetail() {
     <div className="min-h-screen bg-grid pt-24 pb-16">
       <div className="container">
         {/* Back */}
-        <Link href="/teams">
-          <button className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6 font-sans text-sm">
-            <ArrowLeft className="w-4 h-4" /> Back to Teams
-          </button>
-        </Link>
+        <button onClick={() => window.history.back()} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6 font-sans text-sm">
+          <ArrowLeft className="w-4 h-4" /> Back to Teams
+        </button>
 
         {/* Team Hero */}
         <div className="card-premium border-animated p-6 md:p-8 mb-6 animate-fade-in-up relative overflow-hidden">
@@ -200,7 +198,7 @@ export default function TeamDetail() {
                   <span key={i} className={`text-xs font-display tracking-widest text-muted-foreground uppercase ${i >= 3 ? "text-right" : ""}`}>{h}</span>
                 ))}
               </div>
-              {matchHistory?.map((match, i) => {
+              {matchHistory?.map((match: any, i: number) => {
                 const isWinner = match.winnerId === teamId;
                 return (
                   <div key={match.id} className="grid grid-cols-[60px_1fr_1fr_80px_100px] gap-3 px-5 py-4 border-b border-border/20 last:border-0 table-row-hover animate-fade-in"
