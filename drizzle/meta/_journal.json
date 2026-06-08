@@ -15,6 +15,20 @@
       "when": 1780850322240,
       "tag": "0001_lively_nehzno",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1780853045117,
+      "tag": "0002_low_mulholland_black",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1780861523188,
+      "tag": "0003_clever_gladiator",
+      "breakpoints": true
     }
   ]
 }

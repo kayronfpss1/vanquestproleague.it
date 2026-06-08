@@ -15,9 +15,11 @@
 - [x] staff router: protected procedures for all management actions (addWin, removeWin, addLoss, removeLoss, editElo, applyPenalty)
 - [x] staff_logs router: list logs (protected)
 - [x] admin router: users (list all), setUserRole (promote/demote)
+- [x] apiKeys router: create, list (for bot authentication)
 - [x] Elo system: K=32, start 1500, standard formula
 - [x] adminProcedure guard: role=admin required for all staff actions
 - [x] superAdminProcedure guard: role=admin required for user management
+- [x] apiKeyProcedure guard: API key required for bot endpoints
 - [x] Automatic staff logging on every action (including role changes)
 
 ## Frontend Pages
@@ -39,3 +41,17 @@
 - [x] Vitest tests for Elo calculation logic (11 tests, all passing)
 - [x] Vitest tests for auth.logout procedure
 - [x] Checkpoint saved
+
+## Custom Authentication (email/password/username)
+- [x] Schema: add username, passwordHash, email fields to users table
+- [x] Schema: add custom sessions table (token, userId, expiresAt)
+- [x] Backend: register procedure (email, password, username) with bcrypt
+- [x] Backend: login procedure (email/username + password)
+- [x] Backend: logout procedure (clear custom session)
+- [x] Backend: custom session router (customAuth)
+- [x] Backend: seed admin account kayronfpss1 (giacomo01011999@gmail.com)
+- [x] Frontend: Register page
+- [x] Frontend: Login page
+- [x] Frontend: update NavBar (login/register/logout buttons)
+- [ ] Bot: fix /match add using API key authentication
+- [ ] Bot: API key generation panel in Admin page

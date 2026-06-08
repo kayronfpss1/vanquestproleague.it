@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/_core/hooks/useAuth";
-import { getLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { Menu, X, Trophy, Swords, Users, History, Shield, BarChart3 } from "lucide-react";
 
@@ -15,8 +13,9 @@ const navLinks = [
 export default function NavBar() {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { user, isAuthenticated } = useAuth();
-  const logoutMutation = trpc.auth.logout.useMutation({
+  const { data: user } = trpc.customAuth.me.useQuery();
+  const isAuthenticated = !!user;
+  const logoutMutation = trpc.customAuth.logout.useMutation({
     onSuccess: () => { window.location.href = "/"; },
   });
 
@@ -99,11 +98,18 @@ export default function NavBar() {
                 </button>
               </div>
             ) : (
-              <a href={getLoginUrl()}>
-                <button className="px-4 py-2 rounded-lg text-sm font-display font-700 tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground transition-all glow-purple">
-                  LOGIN
-                </button>
-              </a>
+              <div className="flex items-center gap-2">
+                <Link href="/login">
+                  <button className="px-4 py-2 rounded-lg text-sm font-display font-700 tracking-widest bg-primary hover:bg-primary/90 text-primary-foreground transition-all glow-purple">
+                    LOGIN
+                  </button>
+                </Link>
+                <Link href="/register">
+                  <button className="px-4 py-2 rounded-lg text-sm font-sans font-600 border border-primary/50 text-primary hover:bg-primary/10 transition-all">
+                    REGISTER
+                  </button>
+                </Link>
+              </div>
             )}
           </div>
 
@@ -158,11 +164,18 @@ export default function NavBar() {
                   <button onClick={() => logoutMutation.mutate()} className="text-sm text-muted-foreground hover:text-foreground">Logout</button>
                 </div>
               ) : (
-                <a href={getLoginUrl()} className="block">
-                  <button className="w-full px-4 py-3 rounded-lg text-sm font-display font-700 tracking-widest bg-primary text-primary-foreground">
-                    LOGIN
-                  </button>
-                </a>
+                <div className="flex flex-col gap-2">
+                  <Link href="/login">
+                    <button className="w-full px-4 py-3 rounded-lg text-sm font-display font-700 tracking-widest bg-primary text-primary-foreground">
+                      LOGIN
+                    </button>
+                  </Link>
+                  <Link href="/register">
+                    <button className="w-full px-4 py-3 rounded-lg text-sm font-sans font-600 border border-primary/50 text-primary">
+                      REGISTER
+                    </button>
+                  </Link>
+                </div>
               )}
             </div>
           </div>

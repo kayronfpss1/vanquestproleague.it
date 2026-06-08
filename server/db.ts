@@ -1,7 +1,8 @@
 import { eq, desc, asc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, teams, matches, eloHistory, staffLogs, InsertTeam, InsertMatch, InsertEloHistory, InsertStaffLog } from "../drizzle/schema";
+import { InsertUser, users, teams, matches, eloHistory, staffLogs, apiKeys, authSessions, InsertTeam, InsertMatch, InsertEloHistory, InsertStaffLog, InsertApiKey, InsertAuthSession } from "../drizzle/schema";
 import { ENV } from "./_core/env";
+import { randomBytes } from "crypto";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -65,6 +66,70 @@ export async function updateUserRole(userId: number, role: "admin" | "user") {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(users).set({ role }).where(eq(users.id, userId));
+}
+
+// Custom auth: lookup helpers
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result[0];
+}
+
+export async function getUserByUsername(username: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+  return result[0];
+}
+
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result[0];
+}
+
+export async function createCustomUser(params: { openId: string; username: string; email: string; passwordHash: string; name: string; role?: "admin" | "user" }) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(users).values({
+    openId: params.openId,
+    username: params.username,
+    email: params.email,
+    passwordHash: params.passwordHash,
+    name: params.name,
+    loginMethod: "local",
+    role: params.role ?? "user",
+    lastSignedIn: new Date(),
+  });
+  return getUserByUsername(params.username);
+}
+
+// Custom auth: session management
+export async function createAuthSession(token: string, userId: number, expiresAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(authSessions).values({ token, userId, expiresAt });
+}
+
+export async function getAuthSession(token: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(authSessions).where(eq(authSessions.token, token)).limit(1);
+  return result[0];
+}
+
+export async function deleteAuthSession(token: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(authSessions).where(eq(authSessions.token, token));
+}
+
+export async function updateUserLastSignedIn(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, userId));
 }
 
 // ─── ELO calculation ─────────────────────────────────────────────────────────
@@ -307,4 +372,32 @@ export async function getLeaderboardByKd(limit = 50) {
     const kdB = b.wins / Math.max(1, b.losses);
     return kdB - kdA;
   });
+}
+
+// API Keys for bot/external services
+export async function createApiKey(name: string, description: string, createdBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const key = randomBytes(32).toString("hex");
+  await db.insert(apiKeys).values({ key, name, description, createdBy, isActive: 1 });
+  return key;
+}
+
+export async function getApiKeyByKey(key: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(apiKeys).where(eq(apiKeys.key, key)).limit(1);
+  return result[0] || null;
+}
+
+export async function getApiKeysByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(apiKeys).where(eq(apiKeys.createdBy, userId));
+}
+
+export async function updateApiKeyLastUsed(keyId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(apiKeys).set({ lastUsedAt: new Date() }).where(eq(apiKeys.id, keyId));
 }

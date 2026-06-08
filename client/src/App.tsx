@@ -12,6 +12,8 @@ import TeamDetail from "./pages/TeamDetail";
 import MatchHistory from "./pages/MatchHistory";
 import StaffDashboard from "./pages/StaffDashboard";
 import AdminPanel from "./pages/AdminPanel";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 
 function Router() {
   return (
@@ -19,6 +21,8 @@ function Router() {
       <NavBar />
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/login" component={Login} />
+        <Route path="/register" component={Register} />
         <Route path="/leaderboard" component={Leaderboard} />
         <Route path="/teams" component={Teams} />
         <Route path="/team/:id" component={TeamDetail} />

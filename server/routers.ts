@@ -3,6 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
+import { customAuthRouter } from "./customAuth";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import {
   getAllTeams,
@@ -25,6 +26,10 @@ import {
   getStaffLogs,
   getAllUsers,
   updateUserRole,
+  createApiKey,
+  getApiKeyByKey,
+  getApiKeysByUser,
+  updateApiKeyLastUsed,
   ELO_START,
   ELO_K,
   calculateEloChange,
@@ -59,6 +64,8 @@ async function logStaff(ctx: { user: { id: number; name: string | null } }, acti
 // ─── App Router ───────────────────────────────────────────────────────────────
 export const appRouter = router({
   system: systemRouter,
+
+  customAuth: customAuthRouter,
 
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
@@ -218,6 +225,9 @@ export const appRouter = router({
     add: adminProcedure
       .input(z.object({ winnerId: z.number(), loserId: z.number() }))
       .mutation(async ({ input, ctx }) => {
+        // This procedure works with both admin users and API keys
+        const staffId = ctx.user?.id || 0;
+        const staffName = ctx.user?.name || "API Bot";
         if (input.winnerId === input.loserId) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Winner and loser must be different teams" });
         }
@@ -311,6 +321,21 @@ export const appRouter = router({
         await logStaff(ctx, "UPDATE_USER_ROLE", `Set ${input.role === "admin" ? "admin" : "user"} role for user ID ${input.userId}`);
         return { success: true };
       }),
+  }),
+
+  // API Keys for bot authentication
+  apiKeys: router({
+    create: superAdminProcedure
+      .input(z.object({ name: z.string(), description: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const key = await createApiKey(input.name, input.description || "", ctx.user.id);
+        await logStaff(ctx, "CREATE_API_KEY", `Created API key: ${input.name}`);
+        return { key, name: input.name };
+      }),
+
+    list: superAdminProcedure.query(async ({ ctx }) => {
+      return getApiKeysByUser(ctx.user.id);
+    }),
   }),
 });
 

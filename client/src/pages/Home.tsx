@@ -21,12 +21,12 @@ export default function Home() {
             <span className="text-xs font-display tracking-widest text-primary uppercase">Competitive FiveM Tournament</span>
           </div>
           <h1 className="text-5xl md:text-7xl font-display font-900 mb-4 animate-fade-in-up delay-100">
-            <span className="text-gold-gradient">FIVEM</span>
+            <span className="text-gold-gradient">ENVEART</span>
             <br />
-            <span className="text-foreground">TORNEO</span>
+            <span className="text-foreground">TOURNAMENT</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground font-sans max-w-2xl mx-auto mb-10 animate-fade-in-up delay-200">
-            Competitive eSport tournament tracking — real-time rankings, Elo system, and full match history.
+            
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4 animate-fade-in-up delay-300">
             <Link href="/leaderboard">
@@ -177,7 +177,7 @@ export default function Home() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <p className="text-xs font-display tracking-widest text-primary uppercase mb-1">Latest</p>
-              <h2 className="text-2xl md:text-3xl font-display font-800 text-foreground">RECENT MATCHES</h2>
+              <h2 className="text-2xl md:text-3xl font-display font-800 text-foreground">FREEROAM RECENTI</h2>
             </div>
             <Link href="/matches">
               <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors font-sans">
@@ -225,7 +225,7 @@ export default function Home() {
         <div className="container text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Swords className="w-5 h-5 text-primary" />
-            <span className="font-display font-700 tracking-widest text-gold-gradient">FIVEM TORNEO</span>
+            <span className="font-display font-700 tracking-widest text-gold-gradient">ENVEART TOURNAMENT</span>
           </div>
           <p className="text-xs text-muted-foreground font-sans">Competitive eSport Tournament Platform · Elo System K=32</p>
         </div>

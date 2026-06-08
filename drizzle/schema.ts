@@ -9,12 +9,14 @@ import {
   bigint,
 } from "drizzle-orm/mysql-core";
 
-// ─── Users (auth) ────────────────────────────────────────────────────────────
+// ─── Users (custom auth: email/password/username) ─────────────────────────────
 export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
+  username: varchar("username", { length: 50 }).unique(),
+  passwordHash: varchar("password_hash", { length: 255 }),
   name: text("name"),
-  email: varchar("email", { length: 320 }),
+  email: varchar("email", { length: 320 }).unique(),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -24,6 +26,18 @@ export const users = mysqlTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+// ─── Auth Sessions (custom auth) ──────────────────────────────────────────────
+export const authSessions = mysqlTable("auth_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  userId: int("user_id").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AuthSession = typeof authSessions.$inferSelect;
+export type InsertAuthSession = typeof authSessions.$inferInsert;
 
 // ─── Teams ────────────────────────────────────────────────────────────────────
 export const teams = mysqlTable("teams", {
@@ -83,3 +97,18 @@ export const staffLogs = mysqlTable("staff_logs", {
 
 export type StaffLog = typeof staffLogs.$inferSelect;
 export type InsertStaffLog = typeof staffLogs.$inferInsert;
+
+// API Keys for bot/external services
+export const apiKeys = mysqlTable("api_keys", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 64 }).notNull().unique(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  createdBy: int("created_by").notNull(),
+  isActive: int("is_active").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  lastUsedAt: timestamp("last_used_at"),
+});
+
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type InsertApiKey = typeof apiKeys.$inferInsert;
