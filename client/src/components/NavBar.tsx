@@ -33,7 +33,7 @@ export default function NavBar() {
               <Swords className="w-5 h-5 text-primary relative z-10" />
             </div>
             <span className="font-display text-lg font-bold tracking-widest text-gold-gradient">
-              FIVEM<span className="text-foreground/60 mx-1">|</span>TORNEO
+              ENVEART<span className="text-foreground/60 mx-1">|</span>TOURNAMENT
             </span>
           </Link>
 
