@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import axios from "axios";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -30,6 +31,14 @@ import {
   getApiKeysByUser,
   updateApiKeyLastUsed,
   deleteApiKeyById,
+  getActiveDiscordWebhooks,
+  addDiscordWebhook,
+  deleteDiscordWebhook,
+  createTeamInvitation,
+  getInvitationByToken,
+  useTeamInvitation,
+  getTeamInvitations,
+  deleteTeamInvitation,
   ELO_START,
   ELO_K,
   calculateEloChange,
@@ -120,6 +129,36 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         const match = await addMatch(input.winnerId, input.loserId);
         await logStaff(ctx, "ADD_MATCH", `Match: ${input.winnerId} vs ${input.loserId}, Elo change: ${match.eloChange}`);
+        
+        // Send Discord webhook notification
+        try {
+          const webhooks = await getActiveDiscordWebhooks();
+          const eloChangeStr = match.eloChange > 0 ? `+${match.eloChange}` : `${match.eloChange}`;
+          const message = {
+            embeds: [{
+              title: "🏆 New Match Result",
+              description: `**${match.winnerName}** defeated **${match.loserName}**`,
+              fields: [
+                { name: "Winner Elo", value: `${match.winnerEloBefore} → ${match.winnerEloBefore + match.eloChange}`, inline: true },
+                { name: "Loser Elo", value: `${match.loserEloBefore} → ${match.loserEloBefore - match.eloChange}`, inline: true },
+                { name: "Elo Transfer", value: eloChangeStr, inline: false },
+              ],
+              color: 0xFFD700,
+              timestamp: new Date().toISOString(),
+            }]
+          };
+          
+          for (const webhook of webhooks) {
+            try {
+              await axios.post(webhook.webhookUrl, message);
+            } catch (err) {
+              console.warn("[Discord] Failed to send webhook:", err);
+            }
+          }
+        } catch (err) {
+          console.warn("[Discord] Error sending webhooks:", err);
+        }
+        
         return match;
       }),
     remove: ceoProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
@@ -210,6 +249,25 @@ export const appRouter = router({
       }),
   }),
 
+  // ─── Discord Webhooks ────────────────────────────────────────────────────
+  discord: router({
+    webhooks: adminProcedure.query(() => getActiveDiscordWebhooks()),
+    addWebhook: adminProcedure
+      .input(z.object({ webhookUrl: z.string().url(), channelName: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        await addDiscordWebhook(input.webhookUrl, input.channelName);
+        await logStaff(ctx, "ADD_DISCORD_WEBHOOK", `Added webhook for channel: ${input.channelName || "unknown"}`);
+        return { success: true };
+      }),
+    deleteWebhook: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await deleteDiscordWebhook(input.id);
+        await logStaff(ctx, "DELETE_DISCORD_WEBHOOK", `Deleted webhook ${input.id}`);
+        return { success: true };
+      }),
+  }),
+
   // ─── API Keys ─────────────────────────────────────────────────────────────
   apiKeys: router({
     create: adminProcedure
@@ -225,6 +283,44 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         await deleteApiKeyById(input.keyId);
         await logStaff(ctx, "DELETE_API_KEY", `Deleted API key ${input.keyId}`);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Team Invitations ────────────────────────────────────────────────────
+  invitations: router({
+    create: staffProcedure
+      .input(z.object({ teamId: z.number(), teamName: z.string(), expiresIn: z.number().default(7) }))
+      .mutation(async ({ input, ctx }) => {
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + input.expiresIn);
+        const token = await createTeamInvitation(input.teamId, input.teamName, ctx.user.id, expiresAt);
+        await logStaff(ctx, "CREATE_INVITATION", `Created invitation for team ${input.teamName}`);
+        return { token, expiresAt };
+      }),
+    getByToken: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(({ input }) => getInvitationByToken(input.token)),
+    getByTeam: staffProcedure
+      .input(z.object({ teamId: z.number() }))
+      .query(({ input }) => getTeamInvitations(input.teamId)),
+    use: protectedProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const invitation = await getInvitationByToken(input.token);
+        if (!invitation) throw new TRPCError({ code: "NOT_FOUND", message: "Invitation not found" });
+        if (invitation.usedBy) throw new TRPCError({ code: "BAD_REQUEST", message: "Invitation already used" });
+        if (new Date() > invitation.expiresAt) throw new TRPCError({ code: "BAD_REQUEST", message: "Invitation expired" });
+        
+        await useTeamInvitation(input.token, ctx.user.id);
+        await logStaff(ctx, "USE_INVITATION", `User ${ctx.user.id} joined team ${invitation.teamName}`);
+        return { success: true, teamId: invitation.teamId };
+      }),
+    delete: staffProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        await deleteTeamInvitation(input.id);
+        await logStaff(ctx, "DELETE_INVITATION", `Deleted invitation ${input.id}`);
         return { success: true };
       }),
   }),

@@ -1,6 +1,6 @@
 import { eq, desc, asc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, teams, matches, eloHistory, staffLogs, apiKeys, authSessions, InsertTeam, InsertMatch, InsertEloHistory, InsertStaffLog, InsertApiKey, InsertAuthSession } from "../drizzle/schema";
+import { InsertUser, users, teams, matches, eloHistory, staffLogs, apiKeys, authSessions, discordWebhooks, teamInvitations, InsertTeam, InsertMatch, InsertEloHistory, InsertStaffLog, InsertApiKey, InsertAuthSession, InsertDiscordWebhook, InsertTeamInvitation } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { randomBytes } from "crypto";
 
@@ -408,4 +408,57 @@ export async function deleteApiKeyById(keyId: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.delete(apiKeys).where(eq(apiKeys.id, keyId));
+}
+
+// ─── Discord Webhooks ─────────────────────────────────────────────────────────
+export async function getActiveDiscordWebhooks() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(discordWebhooks).where(eq(discordWebhooks.isActive, 1));
+}
+
+export async function addDiscordWebhook(webhookUrl: string, channelName?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(discordWebhooks).values({ webhookUrl, channelName });
+}
+
+export async function deleteDiscordWebhook(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(discordWebhooks).where(eq(discordWebhooks.id, id));
+}
+
+// ─── Team Invitations ─────────────────────────────────────────────────────────
+export async function createTeamInvitation(teamId: number, teamName: string, createdBy: number, expiresAt: Date) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const token = randomBytes(32).toString("hex");
+  await db.insert(teamInvitations).values({ token, teamId, teamName, createdBy, expiresAt });
+  return token;
+}
+
+export async function getInvitationByToken(token: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(teamInvitations).where(eq(teamInvitations.token, token)).limit(1);
+  return result[0];
+}
+
+export async function useTeamInvitation(token: string, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(teamInvitations).set({ usedBy: userId, usedAt: new Date() }).where(eq(teamInvitations.token, token));
+}
+
+export async function getTeamInvitations(teamId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(teamInvitations).where(eq(teamInvitations.teamId, teamId));
+}
+
+export async function deleteTeamInvitation(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(teamInvitations).where(eq(teamInvitations.id, id));
 }

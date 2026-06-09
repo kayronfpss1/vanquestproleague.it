@@ -50,6 +50,18 @@ export default function TeamDetail() {
   const total = team.wins + team.losses;
   const winRate = total === 0 ? 0 : Math.round((team.wins / total) * 100);
 
+  // Calculate weekly stats
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const weeklyMatches = matchHistory?.filter((m: any) => new Date(m.createdAt) >= weekAgo) ?? [];
+  const weeklyWins = weeklyMatches.filter((m: any) => m.winnerId === teamId).length;
+  const weeklyLosses = weeklyMatches.filter((m: any) => m.loserId === teamId).length;
+  const weeklyTotal = weeklyWins + weeklyLosses;
+  const weeklyWinRate = weeklyTotal === 0 ? 0 : Math.round((weeklyWins / weeklyTotal) * 100);
+  const weeklyEloChange = weeklyMatches.reduce((sum: number, m: any) => {
+    return sum + (m.winnerId === teamId ? m.eloChange : -m.eloChange);
+  }, 0);
+
   // Prepare chart data
   const chartData = eloHistory?.map((entry: any, i: number) => ({
     index: i + 1,
@@ -103,6 +115,42 @@ export default function TeamDetail() {
               <p className="text-3xl font-display font-900 text-foreground">{winRate}%</p>
               <div className="w-32 mt-2">
                 <WinRateBar wins={team.wins} losses={team.losses} />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Weekly Stats */}
+        <div className="card-premium p-6 mb-6 animate-fade-in-up relative overflow-hidden border-animated">
+          <div className="absolute top-0 right-0 w-64 h-64 rounded-full blur-3xl opacity-10 pointer-events-none"
+            style={{ background: "radial-gradient(circle, oklch(0.60 0.22 290), transparent)", transform: "translate(30%, -30%)" }} />
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-xs font-display tracking-widest text-secondary uppercase mb-1">Last 7 Days</p>
+                <h3 className="text-xl font-display font-800 text-foreground">WEEKLY STATS</h3>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-display tracking-widest text-muted-foreground uppercase mb-1">Elo Trend</p>
+                <p className={`text-2xl font-display font-800 ${weeklyEloChange >= 0 ? 'text-win' : 'text-loss'}`}>
+                  {weeklyEloChange >= 0 ? '+' : ''}{weeklyEloChange}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="card-premium p-4">
+                <p className="text-xs font-display tracking-widest text-muted-foreground uppercase mb-2">Matches</p>
+                <p className="text-2xl font-display font-800 text-foreground">{weeklyTotal}</p>
+              </div>
+              <div className="card-premium p-4">
+                <p className="text-xs font-display tracking-widest text-muted-foreground uppercase mb-2">Win Rate</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-2xl font-display font-800 text-foreground">{weeklyWinRate}%</p>
+                </div>
+              </div>
+              <div className="card-premium p-4">
+                <p className="text-xs font-display tracking-widest text-muted-foreground uppercase mb-2">Record</p>
+                <p className="text-2xl font-display font-800 text-foreground">{weeklyWins}W-{weeklyLosses}L</p>
               </div>
             </div>
           </div>

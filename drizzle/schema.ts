@@ -112,3 +112,32 @@ export const apiKeys = mysqlTable("api_keys", {
 
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type InsertApiKey = typeof apiKeys.$inferInsert;
+
+// ─── Discord Webhook Config ──────────────────────────────────────────────────
+export const discordWebhooks = mysqlTable("discord_webhooks", {
+  id: int("id").autoincrement().primaryKey(),
+  webhookUrl: text("webhook_url").notNull(),
+  channelName: varchar("channel_name", { length: 100 }),
+  isActive: int("is_active").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type DiscordWebhook = typeof discordWebhooks.$inferSelect;
+export type InsertDiscordWebhook = typeof discordWebhooks.$inferInsert;
+
+// ─── Team Invitations ────────────────────────────────────────────────────────
+export const teamInvitations = mysqlTable("team_invitations", {
+  id: int("id").autoincrement().primaryKey(),
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  teamId: int("team_id").notNull(),
+  teamName: varchar("team_name", { length: 100 }).notNull(),
+  createdBy: int("created_by").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedBy: int("used_by"),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TeamInvitation = typeof teamInvitations.$inferSelect;
+export type InsertTeamInvitation = typeof teamInvitations.$inferInsert;
