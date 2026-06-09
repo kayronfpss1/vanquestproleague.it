@@ -44,7 +44,7 @@ export default function MatchHistory() {
         <div className="flex items-center gap-6 mb-6 animate-fade-in-up delay-150">
           <div className="flex items-center gap-2">
             <Swords className="w-4 h-4 text-primary" />
-            <span className="text-sm font-display font-700 text-foreground">{matches?.length ?? 0} <span className="text-muted-foreground font-500">total matches</span></span>
+            <span className="text-sm font-display font-700 text-foreground">{matches?.length ?? 0} <span className="text-muted-foreground font-500">Freeroam Totali</span></span>
           </div>
           {search && (
             <div className="flex items-center gap-2">
