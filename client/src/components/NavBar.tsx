@@ -30,7 +30,7 @@ export default function NavBar() {
           <Link href="/" className="flex items-center gap-2 group">
             <img src="/manus-storage/enveart-pro-league-full_b0b0b65d.png" alt="Enveart Pro League" className="h-12 w-auto" />
             <span className="hidden sm:block font-display text-sm font-bold tracking-widest text-gold-gradient">
-              TOURNAMENT
+              PRO LEAGUE
             </span>
           </Link>
 

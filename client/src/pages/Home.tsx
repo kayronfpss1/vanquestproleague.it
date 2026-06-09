@@ -22,7 +22,7 @@ export default function Home() {
           <h1 className="text-5xl md:text-7xl font-display font-900 mb-4 animate-fade-in-up delay-100">
             <span className="text-gold-gradient">ENVEART</span>
             <br />
-            <span className="text-foreground">TOURNAMENT</span>
+            <span className="text-foreground">PRO LEAGUE</span>
           </h1>
           <p className="text-lg md:text-xl text-muted-foreground font-sans max-w-2xl mx-auto mb-10 animate-fade-in-up delay-200">
             
@@ -224,7 +224,7 @@ export default function Home() {
         <div className="container text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Swords className="w-5 h-5 text-primary" />
-            <span className="font-display font-700 tracking-widest text-gold-gradient">ENVEART TOURNAMENT</span>
+            <span className="font-display font-700 tracking-widest text-gold-gradient">ENVEART PRO LEAGUE</span>
           </div>
           <p className="text-xs text-muted-foreground font-sans">Created by @kayronfpss1.</p>
         </div>
