@@ -7,7 +7,7 @@ const navLinks = [
   { href: "/", label: "Home", icon: Trophy },
   { href: "/leaderboard", label: "Leaderboard", icon: BarChart3 },
   { href: "/teams", label: "Teams", icon: Users },
-  { href: "/matches", label: "Match History", icon: History },
+  { href: "/matches", label: "Freeroam Recenti", icon: History },
 ];
 
 export default function NavBar() {
