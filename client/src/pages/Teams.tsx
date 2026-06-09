@@ -53,8 +53,12 @@ export default function Teams() {
                 <div className={`card-premium border-animated p-5 cursor-pointer animate-fade-in-up`}
                   style={{ animationDelay: `${i * 50}ms` }}>
                   <div className="flex items-start gap-4 mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
-                      <span className="text-xl font-display font-900 text-primary">{team.name.charAt(0).toUpperCase()}</span>
+                    <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {team.logoUrl ? (
+                        <img src={team.logoUrl} alt={team.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-xl font-display font-900 text-primary">{team.name.charAt(0).toUpperCase()}</span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-display font-800 text-foreground truncate mb-1">{team.name}</h3>

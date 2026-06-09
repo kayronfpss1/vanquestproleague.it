@@ -80,8 +80,12 @@ export default function Leaderboard() {
                   <div className="flex items-center"><RankBadge rank={i + 1} /></div>
 
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0">
-                      <span className="text-sm font-display font-800 text-primary">{team.name.charAt(0).toUpperCase()}</span>
+                    <div className="w-9 h-9 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {team.logoUrl ? (
+                        <img src={team.logoUrl} alt={team.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-sm font-display font-800 text-primary">{team.name.charAt(0).toUpperCase()}</span>
+                      )}
                     </div>
                     <div className="min-w-0">
                       <p className="font-display font-700 text-foreground truncate">{team.name}</p>
