@@ -53,5 +53,5 @@
 - [x] Frontend: Register page
 - [x] Frontend: Login page
 - [x] Frontend: update NavBar (login/register/logout buttons)
-- [ ] Bot: fix /match add using API key authentication
-- [ ] Bot: API key generation panel in Admin page
+- [x] Bot: fix /match add using API key authentication
+- [x] Bot: API key generation panel in Admin page
