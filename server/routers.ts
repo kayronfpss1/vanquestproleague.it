@@ -128,8 +128,38 @@ export const appRouter = router({
       .input(z.object({ winnerId: z.number(), loserId: z.number() }))
       .mutation(async ({ input, ctx }) => {
         const match = await addMatch(input.winnerId, input.loserId);
-        await logStaff(ctx, "ADD_MATCH", `Match: ${input.winnerId} vs ${input.loserId}, Elo change: ${match.eloChange}`);
         
+        // Get updated team stats
+        const winner = await getTeamById(input.winnerId);
+        const loser = await getTeamById(input.loserId);
+        
+        // Detailed match log
+        const matchLog = `
+🏆 PARTITA REGISTRATA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚔️  ${match.winnerName} = VITTORIA vs ${match.loserName}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 STATISTICHE ${match.winnerName.toUpperCase()} (VINCITORE):
+   • Vittorie: ${winner?.wins ?? 0}
+   • Sconfitte: ${winner?.losses ?? 0}
+   • ELO: ${match.winnerEloBefore} → ${(winner?.elo ?? 0)} (+${match.eloChange})
+   • Streak: ${winner?.streak ?? 0}W
+   • Miglior Streak: ${winner?.bestStreak ?? 0}W
+
+📊 STATISTICHE ${match.loserName.toUpperCase()} (SCONFITTO):
+   • Vittorie: ${loser?.wins ?? 0}
+   • Sconfitte: ${loser?.losses ?? 0}
+   • ELO: ${match.loserEloBefore} → ${(loser?.elo ?? 0)} (-${match.eloChange})
+   • Streak: ${loser?.streak ?? 0}L
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        `.trim();
+        
+        console.log(matchLog);
+        await logStaff(ctx, "ADD_MATCH", matchLog);
+        
+
         // Send Discord webhook notification
         try {
           const webhooks = await getActiveDiscordWebhooks();
