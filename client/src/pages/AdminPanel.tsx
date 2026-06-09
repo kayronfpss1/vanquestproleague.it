@@ -1,5 +1,5 @@
 import { trpc } from "@/lib/trpc";
-import { Lock, Shield, User, AlertTriangle, Check, X, Copy, Trash2, Plus, Search as SearchIcon } from "lucide-react";
+import { Lock, Shield, User, AlertTriangle, Check, X, Copy, Trash2, Plus, Search as SearchIcon, MessageSquare } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +12,9 @@ export default function AdminPanel() {
   const [showApiKeyForm, setShowApiKeyForm] = useState(false);
   const [apiKeyName, setApiKeyName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showWebhookForm, setShowWebhookForm] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookChannel, setWebhookChannel] = useState("");
 
   const { data: users, isLoading } = trpc.admin.users.useQuery(undefined, {
     enabled: isAuthenticated && user?.role === "admin",
@@ -61,6 +64,27 @@ export default function AdminPanel() {
     onSuccess: () => {
       trpc.useUtils().apiKeys.list.invalidate();
       toast.success("API Key deleted!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const { data: webhooks, isLoading: webhooksLoading } = trpc.discord.webhooks.useQuery();
+
+  const addWebhook = trpc.discord.addWebhook.useMutation({
+    onSuccess: () => {
+      trpc.useUtils().discord.webhooks.invalidate();
+      setShowWebhookForm(false);
+      setWebhookUrl("");
+      setWebhookChannel("");
+      toast.success("Discord webhook added!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const deleteWebhook = trpc.discord.deleteWebhook.useMutation({
+    onSuccess: () => {
+      trpc.useUtils().discord.webhooks.invalidate();
+      toast.success("Discord webhook deleted!");
     },
     onError: (e: any) => toast.error(e.message),
   });
@@ -348,6 +372,116 @@ export default function AdminPanel() {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground font-sans">The API key will be shown once. Copy it immediately and store it securely.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Discord Webhooks Section */}
+        <div className="mt-10 animate-fade-in-up delay-300">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-accent/20 border border-accent/30">
+              <MessageSquare className="w-5 h-5 text-accent" />
+            </div>
+            <div>
+              <p className="text-xs font-display tracking-widest text-accent uppercase">Notifications</p>
+              <h2 className="text-2xl md:text-3xl font-display font-900 text-foreground">DISCORD WEBHOOKS</h2>
+            </div>
+          </div>
+          <p className="text-muted-foreground font-sans mb-6">Configure Discord webhooks to receive match notifications.</p>
+
+          {/* Webhooks Table */}
+          <div className="card-premium overflow-hidden mb-6">
+            <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
+              <h3 className="text-lg font-display font-700 text-foreground">ACTIVE WEBHOOKS</h3>
+              <button
+                onClick={() => setShowWebhookForm(!showWebhookForm)}
+                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent/20 text-accent hover:bg-accent/30 border border-accent/30 transition-all text-xs font-display font-700"
+              >
+                <Plus className="w-4 h-4" />
+                ADD
+              </button>
+            </div>
+
+            {webhooksLoading ? (
+              <div className="p-8 text-center">
+                <div className="shimmer h-12 rounded-lg" />
+              </div>
+            ) : webhooks?.length === 0 ? (
+              <div className="py-12 text-center text-muted-foreground font-sans">No webhooks configured. Add one to receive match notifications.</div>
+            ) : (
+              <>
+                <div className="grid grid-cols-[1fr_150px_100px] gap-3 px-6 py-3 border-b border-border/30 bg-muted/20">
+                  <span className="text-xs font-display tracking-widest text-muted-foreground uppercase">Channel</span>
+                  <span className="text-xs font-display tracking-widest text-muted-foreground uppercase">Created</span>
+                  <span className="text-xs font-display tracking-widest text-muted-foreground uppercase">Action</span>
+                </div>
+                {webhooks?.map((webhook, i) => (
+                  <div
+                    key={webhook.id}
+                    className="grid grid-cols-[1fr_150px_100px] gap-3 px-6 py-4 border-b border-border/20 last:border-0 items-center table-row-hover animate-fade-in"
+                    style={{ animationDelay: `${i * 30}ms` }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-accent/20 border border-accent/30 flex items-center justify-center">
+                        <MessageSquare className="w-4 h-4 text-accent" />
+                      </div>
+                      <div>
+                        <p className="font-display font-700 text-foreground">{webhook.channelName || "Unnamed"}</p>
+                        <p className="text-xs text-muted-foreground font-mono">URL: {webhook.webhookUrl.substring(0, 20)}...</p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground font-sans">
+                      {new Date(webhook.createdAt).toLocaleDateString()}
+                    </div>
+                    <button
+                      onClick={() => deleteWebhook.mutate({ id: webhook.id })}
+                      disabled={deleteWebhook.isPending}
+                      className="flex items-center justify-center px-2 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/30 transition-all text-xs font-display font-700 disabled:opacity-50"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+
+          {/* Add Webhook Form */}
+          {showWebhookForm && (
+            <div className="card-premium p-6 animate-scale-in">
+              <h4 className="text-lg font-display font-700 text-foreground mb-4">ADD DISCORD WEBHOOK</h4>
+              <div className="space-y-4 mb-4">
+                <input
+                  type="text"
+                  placeholder="Discord Webhook URL"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg bg-muted border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 text-sm"
+                />
+                <input
+                  type="text"
+                  placeholder="Channel name (optional, e.g., #matches)"
+                  value={webhookChannel}
+                  onChange={(e) => setWebhookChannel(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg bg-muted border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 text-sm"
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => addWebhook.mutate({ webhookUrl, channelName: webhookChannel || undefined })}
+                  disabled={addWebhook.isPending || !webhookUrl.trim()}
+                  className="px-4 py-2 rounded-lg bg-accent text-accent-foreground hover:bg-accent/90 border border-accent transition-all text-sm font-display font-700 disabled:opacity-50"
+                >
+                  {addWebhook.isPending ? "..." : "ADD"}
+                </button>
+                <button
+                  onClick={() => setShowWebhookForm(false)}
+                  className="px-4 py-2 rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 border border-border transition-all text-sm font-display font-700"
+                >
+                  CANCEL
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground font-sans mt-4">Get your webhook URL from Discord server settings → Integrations → Webhooks</p>
             </div>
           )}
         </div>
