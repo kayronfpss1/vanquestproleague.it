@@ -22,7 +22,7 @@ export default function MatchHistory() {
             <LiveIndicator />
           </div>
           <h1 className="text-4xl md:text-5xl font-display font-900 text-foreground mb-2">FREEROAM RECENTI</h1>
-          <p className="text-muted-foreground font-sans">Storico completo di tutte le partite del torneo e variazioni Elo.</p>
+          <p className="text-muted-foreground font-sans">Storico completo di tutte le freeroam tra fazioni</p>
         </div>
 
         {/* Search */}
