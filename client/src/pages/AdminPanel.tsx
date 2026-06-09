@@ -30,10 +30,11 @@ export default function AdminPanel() {
       trpc.useUtils().apiKeys.list.invalidate();
       setShowApiKeyForm(false);
       setApiKeyName("");
-      toast.success("API Key created! Copy it now - you won't see it again.");
-      if (data.key) {
-        navigator.clipboard.writeText(data.key);
-        toast.success("API Key copied to clipboard!");
+      if (data && typeof data === 'string') {
+        navigator.clipboard.writeText(data);
+        toast.success("API Key created and copied to clipboard! Save it now - you won't see it again.");
+      } else {
+        toast.success("API Key created! Copy it from the list below.");
       }
     },
     onError: (e: any) => toast.error(e.message),

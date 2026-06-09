@@ -127,16 +127,16 @@ function TeamManagement() {
     onSuccess: () => { utils.teams.list.invalidate(); toast.success("Team deleted."); },
     onError: (e: any) => toast.error(e.message),
   });
-  const editEloMutation = trpc.teams.editElo.useMutation({
+  const editEloMutation = trpc.staff.editElo.useMutation({
     onSuccess: () => { utils.teams.list.invalidate(); setEditingTeam(null); setEditElo(""); setEditEloReason(""); toast.success("Elo updated!"); },
     onError: (e: any) => toast.error(e.message),
   });
-  const applyPenalty = trpc.teams.applyPenalty.useMutation({
+  const applyPenalty = trpc.staff.applyPenalty.useMutation({
     onSuccess: () => { utils.teams.list.invalidate(); setPenaltyTeamId(null); setPenalty(""); setPenaltyReason(""); toast.success("Penalty applied!"); },
     onError: (e: any) => toast.error(e.message),
   });
-  const addWin = trpc.teams.addWin.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Win added."); }, onError: (e: any) => toast.error(e.message) });
-  const removeWin = trpc.teams.removeWin.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Win removed."); }, onError: (e: any) => toast.error(e.message) });
+  const addWin = trpc.staff.addWin.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Win added."); }, onError: (e: any) => toast.error(e.message) });
+  const removeWin = trpc.staff.removeWin.useMutation({ onSuccess: () => { utils.teams.list.invalidate(); toast.success("Win removed."); }, onError: (e: any) => toast.error(e.message) });
   // Removed addLoss and removeLoss - use addWin/removeWin instead
 
   return (
@@ -191,8 +191,8 @@ function TeamManagement() {
 
                 {/* Quick actions */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <button onClick={() => addWin.mutate({ id: team.id })} title="Add Win" className="p-2 rounded-lg bg-win/10 text-win hover:bg-win/20 border border-win/20 transition-all text-xs font-display font-700">+W</button>
-                  <button onClick={() => removeWin.mutate({ id: team.id })} title="Remove Win" className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent border border-border transition-all text-xs font-display font-700">-W</button>
+                  <button onClick={() => addWin.mutate({ teamId: team.id })} title="Add Win" className="p-2 rounded-lg bg-win/10 text-win hover:bg-win/20 border border-win/20 transition-all text-xs font-display font-700">+W</button>
+                  <button onClick={() => removeWin.mutate({ teamId: team.id })} title="Remove Win" className="p-2 rounded-lg bg-muted text-muted-foreground hover:bg-accent border border-border transition-all text-xs font-display font-700">-W</button>
                   <button onClick={() => { setEditingTeam(editingTeam === team.id ? null : team.id); setEditElo(String(team.elo)); }} className="flex items-center gap-1 px-3 py-2 rounded-lg bg-secondary/10 text-secondary hover:bg-secondary/20 border border-secondary/20 transition-all text-xs font-display font-700">
                     <Edit3 className="w-3.5 h-3.5" /> ELO
                   </button>
@@ -212,7 +212,7 @@ function TeamManagement() {
                   <div className="flex flex-wrap gap-3">
                     <input type="number" value={editElo} onChange={e => setEditElo(e.target.value)} className="w-32 px-3 py-2 rounded-lg bg-input border border-border focus:border-secondary/50 focus:outline-none text-foreground font-display font-700 transition-all" />
                     <input type="text" placeholder="Reason (optional)..." value={editEloReason} onChange={e => setEditEloReason(e.target.value)} className="flex-1 min-w-48 px-3 py-2 rounded-lg bg-input border border-border focus:border-secondary/50 focus:outline-none text-foreground placeholder:text-muted-foreground font-sans transition-all" />
-                    <button onClick={() => editEloMutation.mutate({ id: team.id, elo: parseInt(editElo), reason: editEloReason || undefined })} disabled={!editElo || editEloMutation.isPending} className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground font-display font-700 text-sm disabled:opacity-50 transition-all">
+                    <button onClick={() => editEloMutation.mutate({ teamId: team.id, newElo: parseInt(editElo) })} disabled={!editElo || editEloMutation.isPending} className="px-4 py-2 rounded-lg bg-secondary text-secondary-foreground font-display font-700 text-sm disabled:opacity-50 transition-all">
                       {editEloMutation.isPending ? "..." : "APPLY"}
                     </button>
                     <button onClick={() => setEditingTeam(null)} className="px-4 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground font-display font-700 text-sm transition-all">CANCEL</button>
@@ -227,7 +227,7 @@ function TeamManagement() {
                   <div className="flex flex-wrap gap-3">
                     <input type="number" placeholder="Elo penalty..." value={penalty} onChange={e => setPenalty(e.target.value)} className="w-36 px-3 py-2 rounded-lg bg-input border border-border focus:border-destructive/50 focus:outline-none text-foreground font-display font-700 transition-all" />
                     <input type="text" placeholder="Reason (optional)..." value={penaltyReason} onChange={e => setPenaltyReason(e.target.value)} className="flex-1 min-w-48 px-3 py-2 rounded-lg bg-input border border-border focus:border-destructive/50 focus:outline-none text-foreground placeholder:text-muted-foreground font-sans transition-all" />
-                    <button onClick={() => applyPenalty.mutate({ id: team.id, penalty: parseInt(penalty), reason: penaltyReason || undefined })} disabled={!penalty || applyPenalty.isPending} className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground font-display font-700 text-sm disabled:opacity-50 transition-all">
+                    <button onClick={() => applyPenalty.mutate({ teamId: team.id, penaltyElo: parseInt(penalty) })} disabled={!penalty || applyPenalty.isPending} className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground font-display font-700 text-sm disabled:opacity-50 transition-all">
                       {applyPenalty.isPending ? "..." : "APPLY"}
                     </button>
                     <button onClick={() => setPenaltyTeamId(null)} className="px-4 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground font-display font-700 text-sm transition-all">CANCEL</button>
@@ -246,7 +246,7 @@ function TeamManagement() {
 function MatchManagement() {
   const utils = trpc.useUtils();
   const { data: teams } = trpc.teams.list.useQuery();
-  const { data: matches, isLoading } = trpc.matches.list.useQuery();
+  const { data: matches, isLoading: matchesLoading } = trpc.matches.list.useQuery();
   const [winnerId, setWinnerId] = useState("");
   const [loserId, setLoserId] = useState("");
 
@@ -332,7 +332,7 @@ function MatchManagement() {
         <div className="px-6 py-4 border-b border-border/50">
           <h3 className="text-lg font-display font-700 text-foreground">RECENT MATCHES</h3>
         </div>
-        {isLoading ? (
+        {matchesLoading ? (
           <div className="p-5"><TableSkeleton rows={5} /></div>
         ) : matches?.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground font-sans">No matches yet.</div>
@@ -365,7 +365,7 @@ function MatchManagement() {
 
 // ─── Staff Logs ───────────────────────────────────────────────────────────────
 function StaffLogs() {
-  const { data: logs, isLoading } = trpc.staffLogs.list.useQuery();
+  const { data: logs, isLoading } = trpc.staff.logs.useQuery();
 
   const actionColors: Record<string, string> = {
     ADD_MATCH: "text-win bg-win/10 border-win/30",
@@ -393,7 +393,7 @@ function StaffLogs() {
       ) : logs?.length === 0 ? (
         <div className="py-12 text-center text-muted-foreground font-sans">No staff actions logged yet.</div>
       ) : (
-        logs?.map((log, i) => (
+        logs?.map((log: any, i: number) => (
           <div key={log.id} className="flex flex-wrap items-start gap-3 px-5 py-4 border-b border-border/20 last:border-0 animate-fade-in" style={{ animationDelay: `${Math.min(i * 20, 300)}ms` }}>
             <span className="text-xs font-display text-muted-foreground w-10 flex-shrink-0 mt-0.5">#{log.id}</span>
             <div className="flex-1 min-w-0">

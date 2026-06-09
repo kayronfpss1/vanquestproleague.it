@@ -62,10 +62,11 @@ export async function getAllUsers() {
   return db.select().from(users).orderBy(users.createdAt);
 }
 
-export async function updateUserRole(userId: number, role: "admin" | "user") {
+export async function updateUserRole(userId: number, role: "admin" | "user" | "staff" | "ceo") {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(users).set({ role }).where(eq(users.id, userId));
+  return db.select().from(users).where(eq(users.id, userId)).limit(1);
 }
 
 // Custom auth: lookup helpers

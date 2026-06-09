@@ -29,6 +29,13 @@
       "when": 1780861523188,
       "tag": "0003_clever_gladiator",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1781023201934,
+      "tag": "0004_minor_tombstone",
+      "breakpoints": true
     }
   ]
 }
