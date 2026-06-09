@@ -66,7 +66,8 @@ export async function updateUserRole(userId: number, role: "admin" | "user" | "s
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(users).set({ role }).where(eq(users.id, userId));
-  return db.select().from(users).where(eq(users.id, userId)).limit(1);
+  const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  return result[0];
 }
 
 // Custom auth: lookup helpers
