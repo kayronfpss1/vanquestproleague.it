@@ -28,10 +28,7 @@ export default function NavBar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative w-8 h-8 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-lg bg-primary/20 group-hover:bg-primary/30 transition-colors" />
-              <Swords className="w-5 h-5 text-primary relative z-10" />
-            </div>
+            <img src="/manus-storage/enveart-logo-dark_584f6eef.png" alt="Enveart" className="h-8 w-auto" />
             <span className="font-display text-lg font-bold tracking-widest text-gold-gradient">
               ENVEART<span className="text-foreground/60 mx-1">|</span>TOURNAMENT
             </span>
