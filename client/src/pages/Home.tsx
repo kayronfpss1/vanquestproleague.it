@@ -227,7 +227,7 @@ export default function Home() {
             <Swords className="w-5 h-5 text-primary" />
             <span className="font-display font-700 tracking-widest text-gold-gradient">ENVEART TOURNAMENT</span>
           </div>
-          <p className="text-xs text-muted-foreground font-sans">Competitive eSport Tournament Platform · Elo System K=32</p>
+          <p className="text-xs text-muted-foreground font-sans">Created by @kayronfpss1.</p>
         </div>
       </footer>
     </div>
