@@ -1,23 +1,40 @@
 import { trpc } from "@/lib/trpc";
-import { Lock, Shield, User, AlertTriangle, Check, X, Copy, Trash2, Plus } from "lucide-react";
-import { useState } from "react";
+import { Lock, Shield, User, AlertTriangle, Check, X, Copy, Trash2, Plus, Search as SearchIcon } from "lucide-react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function AdminPanel() {
   const { data: user } = trpc.customAuth.me.useQuery();
   const isAuthenticated = !!user;
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [showApiKeyForm, setShowApiKeyForm] = useState(false);
   const [apiKeyName, setApiKeyName] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data: users, isLoading } = trpc.admin.users.useQuery(undefined, {
     enabled: isAuthenticated && user?.role === "admin",
   });
 
+  // Filter users by search query
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    if (!searchQuery.trim()) return users;
+    
+    const query = searchQuery.toLowerCase();
+    return users.filter(u => 
+      (u.name?.toLowerCase() || "").includes(query) ||
+      (u.email?.toLowerCase() || "").includes(query) ||
+      u.id.toString().includes(query)
+    );
+  }, [users, searchQuery]);
+
   const setUserRole = trpc.admin.setUserRole.useMutation({
     onSuccess: () => {
       trpc.useUtils().admin.users.invalidate();
       setSelectedUser(null);
+      setSelectedRole(null);
       toast.success("User role updated!");
     },
     onError: (e) => toast.error(e.message),
@@ -102,9 +119,23 @@ export default function AdminPanel() {
 
         {/* Users Table */}
         <div className="card-premium overflow-hidden animate-fade-in-up delay-100">
-          <div className="px-6 py-4 border-b border-border/50 flex items-center justify-between">
-            <h3 className="text-lg font-display font-700 text-foreground">REGISTERED USERS</h3>
-            <span className="text-xs text-muted-foreground font-sans">{users?.length ?? 0} total</span>
+          <div className="px-6 py-4 border-b border-border/50">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-display font-700 text-foreground">REGISTERED USERS</h3>
+              <span className="text-xs text-muted-foreground font-sans">{filteredUsers?.length ?? 0} / {users?.length ?? 0} users</span>
+            </div>
+            
+            {/* Search bar */}
+            <div className="relative">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search by name, email, or ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-lg bg-muted border border-border text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+              />
+            </div>
           </div>
 
           {isLoading ? (
@@ -113,23 +144,25 @@ export default function AdminPanel() {
               <div className="shimmer h-12 rounded-lg mb-4" />
               <div className="shimmer h-12 rounded-lg" />
             </div>
-          ) : users?.length === 0 ? (
-            <div className="py-12 text-center text-muted-foreground font-sans">No users yet.</div>
+          ) : filteredUsers?.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground font-sans">
+              {searchQuery ? "No users match your search." : "No users yet."}
+            </div>
           ) : (
             <>
               {/* Header row */}
-              <div className="grid grid-cols-[1fr_120px_100px_120px] gap-3 px-6 py-3 border-b border-border/30 bg-muted/20">
+              <div className="grid grid-cols-[1fr_140px_120px_150px] gap-3 px-6 py-3 border-b border-border/30 bg-muted/20">
                 <span className="text-xs font-display tracking-widest text-muted-foreground uppercase">User</span>
                 <span className="text-xs font-display tracking-widest text-muted-foreground uppercase">Email</span>
-                <span className="text-xs font-display tracking-widest text-muted-foreground uppercase">Role</span>
+                <span className="text-xs font-display tracking-widest text-muted-foreground uppercase">Current Role</span>
                 <span className="text-xs font-display tracking-widest text-muted-foreground uppercase">Action</span>
               </div>
 
               {/* User rows */}
-              {users?.map((u, i) => (
+              {filteredUsers?.map((u, i) => (
                 <div
                   key={u.id}
-                  className="grid grid-cols-[1fr_120px_100px_120px] gap-3 px-6 py-4 border-b border-border/20 last:border-0 items-center table-row-hover animate-fade-in"
+                  className="grid grid-cols-[1fr_140px_120px_150px] gap-3 px-6 py-4 border-b border-border/20 last:border-0 items-center table-row-hover animate-fade-in"
                   style={{ animationDelay: `${i * 30}ms` }}
                 >
                   {/* User name */}
@@ -152,48 +185,69 @@ export default function AdminPanel() {
                       className={`px-3 py-1 rounded-lg text-xs font-display font-700 tracking-widest ${
                         u.role === "admin"
                           ? "bg-secondary/20 text-secondary border border-secondary/30"
+                          : u.role === "ceo"
+                          ? "bg-primary/20 text-primary border border-primary/30"
+                          : u.role === "staff"
+                          ? "bg-accent/20 text-accent border border-accent/30"
                           : "bg-muted border border-border"
                       }`}
                     >
-                      {u.role === "admin" ? "ADMIN" : "USER"}
+                      {u.role === "admin" ? "ADMIN" : u.role === "ceo" ? "CEO" : u.role === "staff" ? "STAFF" : "USER"}
                     </span>
                   </div>
 
                   {/* Action buttons */}
                   <div className="flex items-center gap-2 justify-end">
                     {selectedUser === u.id ? (
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center w-full">
+                        <Select value={selectedRole || u.role} onValueChange={setSelectedRole}>
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">User</SelectItem>
+                            <SelectItem value="staff">Staff</SelectItem>
+                            <SelectItem value="ceo">CEO</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <button
                           onClick={() => {
-                            setUserRole.mutate({
-                              userId: u.id,
-                              role: u.role === "admin" ? "user" : "admin",
-                            });
+                            if (selectedRole && selectedRole !== u.role) {
+                              setUserRole.mutate({
+                                userId: u.id,
+                                role: selectedRole as "user" | "staff" | "ceo" | "admin",
+                              });
+                            } else {
+                              setSelectedUser(null);
+                              setSelectedRole(null);
+                            }
                           }}
-                          disabled={setUserRole.isPending}
-                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/20 text-secondary hover:bg-secondary/30 border border-secondary/30 transition-all text-xs font-display font-700 disabled:opacity-50"
+                          disabled={setUserRole.isPending || selectedRole === u.role}
+                          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-secondary/20 text-secondary hover:bg-secondary/30 border border-secondary/30 transition-all text-xs font-display font-700 disabled:opacity-50 whitespace-nowrap"
                         >
                           <Check className="w-3.5 h-3.5" />
-                          {setUserRole.isPending ? "..." : "CONFIRM"}
+                          {setUserRole.isPending ? "..." : "SAVE"}
                         </button>
                         <button
-                          onClick={() => setSelectedUser(null)}
+                          onClick={() => {
+                            setSelectedUser(null);
+                            setSelectedRole(null);
+                          }}
                           className="flex items-center gap-1 px-2 py-1 rounded-lg bg-muted text-muted-foreground hover:bg-accent border border-border transition-all text-xs font-display font-700"
                         >
                           <X className="w-3.5 h-3.5" />
-                          CANCEL
                         </button>
                       </div>
                     ) : (
                       <button
-                        onClick={() => setSelectedUser(u.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-display font-700 tracking-widest transition-all border ${
-                          u.role === "admin"
-                            ? "bg-destructive/10 text-destructive hover:bg-destructive/20 border-destructive/30"
-                            : "bg-secondary/10 text-secondary hover:bg-secondary/20 border-secondary/30"
-                        }`}
+                        onClick={() => {
+                          setSelectedUser(u.id);
+                          setSelectedRole(u.role);
+                        }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-display font-700 tracking-widest transition-all border bg-secondary/10 text-secondary hover:bg-secondary/20 border-secondary/30"
                       >
-                        {u.role === "admin" ? "DEMOTE" : "PROMOTE"}
+                        MODIFY
                       </button>
                     )}
                   </div>
@@ -301,7 +355,7 @@ export default function AdminPanel() {
         {/* Info box */}
         <div className="mt-6 p-4 rounded-xl bg-secondary/5 border border-secondary/20 animate-fade-in-up delay-200">
           <p className="text-sm text-muted-foreground font-sans">
-            <span className="font-display font-700 text-secondary">💡 Tip:</span> Use API keys to authenticate your Discord bot and other integrations. All API key actions are logged automatically.
+            <span className="font-display font-700 text-secondary">💡 Tip:</span> Use the MODIFY button to change any user's role. All role changes are logged automatically.
           </p>
         </div>
       </div>
