@@ -136,12 +136,12 @@ export const appRouter = router({
           const eloChangeStr = match.eloChange > 0 ? `+${match.eloChange}` : `${match.eloChange}`;
           const message = {
             embeds: [{
-              title: "🏆 New Match Result",
-              description: `**${match.winnerName}** defeated **${match.loserName}**`,
+              title: "🏆 Nuovo Risultato Partita",
+              description: `**${match.winnerName}** ha battuto **${match.loserName}**`,
               fields: [
-                { name: "Winner Elo", value: `${match.winnerEloBefore} → ${match.winnerEloBefore + match.eloChange}`, inline: true },
-                { name: "Loser Elo", value: `${match.loserEloBefore} → ${match.loserEloBefore - match.eloChange}`, inline: true },
-                { name: "Elo Transfer", value: eloChangeStr, inline: false },
+                { name: "ELO Vincitore", value: `${match.winnerEloBefore} → ${match.winnerEloBefore + match.eloChange}`, inline: true },
+                { name: "ELO Sconfitto", value: `${match.loserEloBefore} → ${match.loserEloBefore - match.eloChange}`, inline: true },
+                { name: "Trasferimento ELO", value: eloChangeStr, inline: false },
               ],
               color: 0xFFD700,
               timestamp: new Date().toISOString(),
@@ -151,12 +151,13 @@ export const appRouter = router({
           for (const webhook of webhooks) {
             try {
               await axios.post(webhook.webhookUrl, message);
+              console.log(`[Discord] ✅ Notifica inviata a ${webhook.channelName || 'webhook'}: ${match.winnerName} vs ${match.loserName}`);
             } catch (err) {
-              console.warn("[Discord] Failed to send webhook:", err);
+              console.warn(`[Discord] ❌ Errore invio webhook a ${webhook.channelName || 'webhook'}:`, err);
             }
           }
         } catch (err) {
-          console.warn("[Discord] Error sending webhooks:", err);
+          console.warn("[Discord] ❌ Errore durante l'invio dei webhook:", err);
         }
         
         return match;
@@ -256,14 +257,16 @@ export const appRouter = router({
       .input(z.object({ webhookUrl: z.string().url(), channelName: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
         await addDiscordWebhook(input.webhookUrl, input.channelName);
-        await logStaff(ctx, "ADD_DISCORD_WEBHOOK", `Added webhook for channel: ${input.channelName || "unknown"}`);
+        await logStaff(ctx, "ADD_DISCORD_WEBHOOK", `✅ Webhook aggiunto per il canale: ${input.channelName || "senza nome"}`);
+        console.log(`[Discord] ✅ Nuovo webhook aggiunto: ${input.channelName || "senza nome"} - ${input.webhookUrl.substring(0, 30)}...`);
         return { success: true };
       }),
     deleteWebhook: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input, ctx }) => {
         await deleteDiscordWebhook(input.id);
-        await logStaff(ctx, "DELETE_DISCORD_WEBHOOK", `Deleted webhook ${input.id}`);
+        await logStaff(ctx, "DELETE_DISCORD_WEBHOOK", `🗑️ Webhook eliminato (ID: ${input.id})`);
+        console.log(`[Discord] 🗑️ Webhook eliminato - ID: ${input.id}`);
         return { success: true };
       }),
   }),
