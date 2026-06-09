@@ -10,6 +10,7 @@ import {
   getTeamById,
   createTeam,
   updateTeam,
+  updateTeamLogo,
   deleteTeam,
   getTeamStats,
   getAllMatches,
@@ -117,6 +118,13 @@ export const appRouter = router({
       await logStaff(ctx, "DELETE_TEAM", `Deleted team ${input.id}`);
       return { success: true };
     }),
+    updateLogo: staffProcedure
+      .input(z.object({ id: z.number(), logoUrl: z.string().url() }))
+      .mutation(async ({ input, ctx }) => {
+        const team = await updateTeamLogo(input.id, input.logoUrl);
+        await logStaff(ctx, "UPDATE_TEAM_LOGO", `Updated logo for team ${input.id}`);
+        return team;
+      }),
   }),
 
   // ─── Matches ──────────────────────────────────────────────────────────────

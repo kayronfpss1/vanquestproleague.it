@@ -182,6 +182,13 @@ export async function updateTeam(id: number, data: Partial<InsertTeam>) {
   return getTeamById(id);
 }
 
+export async function updateTeamLogo(id: number, logoUrl: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(teams).set({ logoUrl }).where(eq(teams.id, id));
+  return getTeamById(id);
+}
+
 export async function deleteTeam(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");

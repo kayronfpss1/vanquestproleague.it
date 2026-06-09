@@ -50,6 +50,7 @@ export const teams = mysqlTable("teams", {
   bestStreak: int("best_streak").default(0).notNull(),  // best win streak ever
   freeroamWins: int("freeroam_wins").default(0).notNull(),
   freeroamLosses: int("freeroam_losses").default(0).notNull(),
+  logoUrl: varchar("logo_url", { length: 500 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

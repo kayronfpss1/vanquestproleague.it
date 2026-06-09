@@ -43,6 +43,13 @@
       "when": 1781026359816,
       "tag": "0005_minor_aqueduct",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1781028440010,
+      "tag": "0006_mushy_famine",
+      "breakpoints": true
     }
   ]
 }

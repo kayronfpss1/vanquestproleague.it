@@ -1,6 +1,8 @@
 import { useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Trophy, ArrowLeft, Swords, TrendingUp, TrendingDown, Flame, Star, Shield } from "lucide-react";
+import { Trophy, ArrowLeft, Swords, TrendingUp, TrendingDown, Flame, Star, Shield, Upload, Image } from "lucide-react";
+import { useState } from "react";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { EloBadge, StreakBadge, KdRatio, WinRateBar, EloChange, TableSkeleton } from "@/components/EsportUI";
 import {
   ResponsiveContainer,
@@ -12,14 +14,47 @@ import {
   Tooltip,
   ReferenceLine,
 } from "recharts";
+import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
 
 export default function TeamDetail() {
   const { id } = useParams<{ id: string }>();
   const teamId = parseInt(id ?? "0");
+  const { user } = useAuth();
+  const [uploading, setUploading] = useState(false);
+  const [showLogoInput, setShowLogoInput] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
 
-  const { data: team, isLoading: loadingTeam } = trpc.teams.getById.useQuery({ id: teamId }, { enabled: !!teamId });
+  const { data: team, isLoading: loadingTeam, refetch: refetchTeam } = trpc.teams.getById.useQuery({ id: teamId }, { enabled: !!teamId });
   const { data: matchHistory, isLoading: loadingMatches } = trpc.matches.getByTeamId.useQuery({ teamId }, { enabled: !!teamId });
   const { data: eloHistory, isLoading: loadingElo } = trpc.eloHistory.getByTeamId.useQuery({ teamId }, { enabled: !!teamId });
+  
+  const updateLogoMutation = trpc.teams.updateLogo.useMutation({
+    onSuccess: () => {
+      toast.success("Logo aggiornato!");
+      setShowLogoInput(false);
+      setLogoUrl("");
+      refetchTeam();
+    },
+    onError: (err) => {
+      toast.error(err.message || "Errore nell'aggiornamento del logo");
+    },
+  });
+  
+  const canEditTeam = user && (user.role === "staff" || user.role === "ceo" || user.role === "admin");
+  
+  const handleLogoSubmit = async () => {
+    if (!logoUrl.trim()) {
+      toast.error("Inserisci un URL valido");
+      return;
+    }
+    setUploading(true);
+    try {
+      await updateLogoMutation.mutateAsync({ id: teamId, logoUrl: logoUrl.trim() });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   if (loadingTeam) {
     return (
@@ -95,8 +130,23 @@ export default function TeamDetail() {
             style={{ background: "radial-gradient(circle, oklch(0.60 0.22 290), transparent)", transform: "translate(30%, -30%)" }} />
           <div className="relative z-10 flex flex-col md:flex-row md:items-center gap-6">
             {/* Avatar */}
-            <div className="w-20 h-20 rounded-2xl bg-primary/20 border-2 border-primary/40 flex items-center justify-center flex-shrink-0 glow-purple">
-              <span className="text-4xl font-display font-900 text-primary">{team.name.charAt(0).toUpperCase()}</span>
+            <div className="relative group">
+              <div className="w-20 h-20 rounded-2xl bg-primary/20 border-2 border-primary/40 flex items-center justify-center flex-shrink-0 glow-purple overflow-hidden">
+                {team.logoUrl ? (
+                  <img src={team.logoUrl} alt={team.name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-4xl font-display font-900 text-primary">{team.name.charAt(0).toUpperCase()}</span>
+                )}
+              </div>
+              {canEditTeam && (
+                <button
+                  onClick={() => setShowLogoInput(!showLogoInput)}
+                  className="absolute -bottom-2 -right-2 bg-primary hover:bg-primary/90 text-background p-2 rounded-full transition-all opacity-0 group-hover:opacity-100 shadow-lg"
+                  title="Aggiungi/Modifica logo"
+                >
+                  <Upload className="w-4 h-4" />
+                </button>
+              )}
             </div>
             {/* Info */}
             <div className="flex-1">
@@ -119,6 +169,33 @@ export default function TeamDetail() {
             </div>
           </div>
         </div>
+
+        {/* Logo Upload Form */}
+        {showLogoInput && canEditTeam && (
+          <div className="card-premium p-4 mb-6 animate-fade-in-up">
+            <div className="flex items-center gap-2 mb-3">
+              <Image className="w-4 h-4 text-primary" />
+              <h3 className="font-display font-700 text-foreground">Aggiungi/Modifica Logo</h3>
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="url"
+                placeholder="Incolla URL immagine..."
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                className="flex-1 px-3 py-2 rounded-lg bg-background border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary font-sans"
+              />
+              <button
+                onClick={handleLogoSubmit}
+                disabled={uploading}
+                className="px-4 py-2 bg-primary hover:bg-primary/90 disabled:bg-muted text-background rounded-lg font-sans font-600 transition-all flex items-center gap-2"
+              >
+                {uploading ? <Spinner className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
+                {uploading ? "Caricamento..." : "Salva"}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Weekly Stats */}
         <div className="card-premium p-6 mb-6 animate-fade-in-up relative overflow-hidden border-animated">
