@@ -16,9 +16,8 @@ export default function Home() {
             style={{ background: "radial-gradient(ellipse, oklch(0.60 0.22 290), transparent)" }} />
         </div>
         <div className="container relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/30 bg-primary/10 mb-6 animate-fade-in">
-            <img src="/manus-storage/enveart-pro-league_34ec1697.png" alt="Enveart Pro League" className="h-6 w-auto" />
-            <span className="text-xs font-display tracking-widest text-primary uppercase">Competitive FiveM Tournament</span>
+          <div className="inline-flex items-center justify-center mb-6 animate-fade-in">
+            <img src="/manus-storage/enveart-pro-league-full_b0b0b65d.png" alt="Enveart Pro League" className="h-24 w-auto" />
           </div>
           <h1 className="text-5xl md:text-7xl font-display font-900 mb-4 animate-fade-in-up delay-100">
             <span className="text-gold-gradient">ENVEART</span>

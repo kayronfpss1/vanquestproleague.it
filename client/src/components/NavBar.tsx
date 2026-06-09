@@ -28,9 +28,9 @@ export default function NavBar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <img src="/manus-storage/enveart-logo-dark_584f6eef.png" alt="Enveart" className="h-8 w-auto" />
-            <span className="font-display text-lg font-bold tracking-widest text-gold-gradient">
-              ENVEART<span className="text-foreground/60 mx-1">|</span>TOURNAMENT
+            <img src="/manus-storage/enveart-pro-league-full_b0b0b65d.png" alt="Enveart Pro League" className="h-12 w-auto" />
+            <span className="hidden sm:block font-display text-sm font-bold tracking-widest text-gold-gradient">
+              TOURNAMENT
             </span>
           </Link>
 
