@@ -23,14 +23,14 @@ export default function NavBar() {
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 backdrop-blur-xl"
-      style={{ background: "oklch(0.07 0.01 280 / 0.92)" }}>
+      style={{ background: "oklch(0.05 0.01 250 / 0.92)" }}>
       <div className="container">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <img src="/manus-storage/enveart-pro-league-full_b0b0b65d.png" alt="Enveart Pro League" className="h-12 w-auto" />
-            <span className="hidden sm:block font-display text-sm font-bold tracking-widest text-gold-gradient">
-              PRO LEAGUE
+            <img src="/manus-storage/vanquest-logo.png" alt="VANQUEST Pro League" className="h-12 w-auto" />
+            <span className="hidden sm:block font-display text-sm font-bold tracking-widest text-azure-bright">
+              VANQUEST
             </span>
           </Link>
 

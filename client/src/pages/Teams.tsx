@@ -15,8 +15,8 @@ export default function Teams() {
       <div className="container">
         {/* Header */}
         <div className="mb-10 animate-fade-in-up">
-          <p className="text-xs font-display tracking-widest text-primary uppercase mb-2">Roster</p>
-          <h1 className="text-4xl md:text-5xl font-display font-900 text-foreground mb-2">ALL TEAMS</h1>
+          <p className="text-xs font-display tracking-widest text-azure-bright uppercase mb-2">Roster</p>
+          <h1 className="text-4xl md:text-5xl font-display font-900 text-foreground mb-2">VANQUEST TEAMS</h1>
           <p className="text-muted-foreground font-sans">Browse all registered teams and their statistics.</p>
         </div>
 

@@ -5,7 +5,7 @@ interface StatCardProps {
   label: string;
   value: string | number;
   icon?: React.ReactNode;
-  accent?: "purple" | "gold" | "green" | "red";
+  accent?: "purple" | "gold" | "green" | "red" | "blue" | "azure";
   className?: string;
 }
 
@@ -15,6 +15,8 @@ export function StatCard({ label, value, icon, accent = "purple", className = ""
     gold:   "text-secondary border-secondary/30 bg-secondary/10",
     green:  "text-win border-green-500/30 bg-green-500/10",
     red:    "text-loss border-red-500/30 bg-red-500/10",
+    blue:   "text-primary border-primary/30 bg-primary/10",
+    azure:  "text-secondary border-secondary/30 bg-secondary/10",
   };
   return (
     <div className={`card-premium p-5 ${className}`}>

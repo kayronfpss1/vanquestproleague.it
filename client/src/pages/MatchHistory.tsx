@@ -21,18 +21,18 @@ export default function MatchHistory() {
           <div className="flex items-center gap-2 mb-2">
             <LiveIndicator />
           </div>
-          <h1 className="text-4xl md:text-5xl font-display font-900 text-foreground mb-2">FREEROAM RECENTI</h1>
-          <p className="text-muted-foreground font-sans">Storico completo di tutte le freeroam tra fazioni</p>
+          <h1 className="text-4xl md:text-5xl font-display font-900 text-foreground mb-2">VANQUEST BATTLES</h1>
+          <p className="text-muted-foreground font-sans">Storico completo di tutte le battaglie VANQUEST</p>
         </div>
 
         {/* Search */}
         <div className="relative mb-6 animate-fade-in-up delay-100 flex items-center gap-3">
-          <img src="/manus-storage/enveart-pro-league-full_b0b0b65d.png" alt="Enveart Pro League" className="h-10 w-auto" />
+          <img src="/manus-storage/vanquest-logo.png" alt="VANQUEST Pro League" className="h-10 w-auto" />
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
               type="text"
-              placeholder="Enveart Pro League"
+              placeholder="VANQUEST Pro League"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="w-full pl-11 pr-4 py-3 rounded-xl bg-card border border-border focus:border-primary/50 focus:outline-none focus:ring-1 focus:ring-primary/30 text-foreground placeholder:text-muted-foreground font-sans transition-all"

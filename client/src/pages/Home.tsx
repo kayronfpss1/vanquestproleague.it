@@ -13,14 +13,14 @@ export default function Home() {
       <section className="pt-32 pb-20 text-center relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] rounded-full blur-3xl opacity-20"
-            style={{ background: "radial-gradient(ellipse, oklch(0.60 0.22 290), transparent)" }} />
+            style={{ background: "radial-gradient(ellipse, oklch(0.55 0.25 250), transparent)" }} />
         </div>
         <div className="container relative z-10">
           <div className="inline-flex items-center justify-center mb-6 animate-fade-in">
-            <img src="/manus-storage/enveart-pro-league-full_b0b0b65d.png" alt="Enveart Pro League" className="h-24 w-auto" />
+            <img src="/manus-storage/vanquest-logo.png" alt="VANQUEST Pro League" className="h-24 w-auto" />
           </div>
           <h1 className="text-5xl md:text-7xl font-display font-900 mb-4 animate-fade-in-up delay-100">
-            <span className="text-gold-gradient">ENVEART</span>
+            <span className="text-azure-bright">VANQUEST</span>
             <br />
             <span className="text-foreground">PRO LEAGUE</span>
           </h1>
@@ -57,7 +57,7 @@ export default function Home() {
                     label="Active Teams"
                     value={stats?.totalTeams ?? 0}
                     icon={<Users className="w-5 h-5" />}
-                    accent="purple"
+                    accent="blue"
                   />
                 </div>
                 <div className="animate-fade-in-up delay-150">
@@ -65,7 +65,7 @@ export default function Home() {
                     label="Total Matches"
                     value={stats?.totalMatches ?? 0}
                     icon={<Swords className="w-5 h-5" />}
-                    accent="gold"
+                    accent="azure"
                   />
                 </div>
                 <div className="animate-fade-in-up delay-200">
@@ -81,7 +81,7 @@ export default function Home() {
                     label="K Factor"
                     value="32"
                     icon={<Zap className="w-5 h-5" />}
-                    accent="purple"
+                    accent="blue"
                   />
                 </div>
               </>

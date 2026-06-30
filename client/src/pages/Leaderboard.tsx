@@ -29,9 +29,9 @@ export default function Leaderboard() {
         <div className="mb-10 animate-fade-in-up">
           <div className="flex items-center gap-2 mb-2">
             <div className="pulse-dot" />
-            <span className="text-xs font-display tracking-widest text-primary uppercase">Live Rankings</span>
+            <span className="text-xs font-display tracking-widest text-azure-bright uppercase">Live Rankings</span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-display font-900 text-foreground mb-2">LEADERBOARD</h1>
+          <h1 className="text-4xl md:text-5xl font-display font-900 text-foreground mb-2">VANQUEST RANKINGS</h1>
           <p className="text-muted-foreground font-sans">Competitive rankings updated in real-time after every match.</p>
         </div>
 
@@ -43,7 +43,7 @@ export default function Leaderboard() {
               onClick={() => setActiveTab(id)}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-display font-700 tracking-widest transition-all duration-200 ${
                 activeTab === id
-                  ? "bg-primary text-primary-foreground glow-purple"
+                  ? "bg-primary text-primary-foreground glow-blue"
                   : "border border-border text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-accent"
               }`}
             >
