@@ -27,7 +27,7 @@ export default function MatchHistory() {
 
         {/* Search */}
         <div className="relative mb-6 animate-fade-in-up delay-100 flex items-center gap-3">
-          <img src="/manus-storage/vanquest-logo_9fce9814.png" alt="VANQUEST Pro League" className="h-10 w-auto" />
+          <img src="https://imgur.com/a/9P2oINx.png" alt="VANQUEST Pro League" className="h-10 w-auto" />
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
