@@ -1,0 +1,12 @@
+{
+  "buildCommand": "pnpm run build",
+  "outputDirectory": "dist",
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "server/_core/index.ts": {
+      "runtime": "nodejs20.x"
+    }
+  }
+}
