@@ -396,8 +396,15 @@ export const appRouter = router({
     create: staffProcedure
       .input(z.object({ name: z.string().min(1), description: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
-        const { createFaction } = await import("./db");
+        const { createFaction, addFactionMember, getFactionByName } = await import("./db");
         await createFaction({ name: input.name, description: input.description, createdBy: ctx.user.id });
+        
+        // Auto-assign creator to the faction
+        const faction = await getFactionByName(input.name);
+        if (faction) {
+          await addFactionMember(faction.id, ctx.user.id, ctx.user.id);
+        }
+        
         await logStaff(ctx, "CREATE_FACTION", `Created faction: ${input.name}`);
         return { success: true };
       }),
@@ -478,14 +485,69 @@ export const appRouter = router({
         // Approve submission
         await approveWinSubmission(input.submissionId, ctx.user.id);
         await logStaff(ctx, "APPROVE_WIN", `Approved win submission ${input.submissionId}`);
+        
+        // Send Discord notification
+        const discordWebhook = process.env.DISCORD_WEBHOOK_URL;
+        if (discordWebhook) {
+          try {
+            const eloChange = calculateEloChange(winnerTeam.elo, loserTeam.elo);
+            await fetch(discordWebhook, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                embeds: [{
+                  title: "✅ Win Approved",
+                  description: `${winnerFaction.name} defeated ${loserFaction.name}`,
+                  color: 0x00FF00,
+                  fields: [
+                    { name: "Winner", value: winnerFaction.name, inline: true },
+                    { name: "Loser", value: loserFaction.name, inline: true },
+                    { name: "ELO Change", value: `+${eloChange}`, inline: true },
+                  ],
+                  timestamp: new Date().toISOString(),
+                }],
+              }),
+            });
+          } catch (err) {
+            console.error("Discord notification failed:", err);
+          }
+        }
+        
         return { success: true };
       }),
     reject: staffProcedure
       .input(z.object({ submissionId: z.number(), reason: z.string() }))
       .mutation(async ({ input, ctx }) => {
-        const { rejectWinSubmission } = await import("./db");
+        const { rejectWinSubmission, getWinSubmissionById, getFactionById } = await import("./db");
+        const submission = await getWinSubmissionById(input.submissionId);
         await rejectWinSubmission(input.submissionId, input.reason);
         await logStaff(ctx, "REJECT_WIN", `Rejected win submission ${input.submissionId}: ${input.reason}`);
+        
+        // Send Discord notification
+        const discordWebhook = process.env.DISCORD_WEBHOOK_URL;
+        if (discordWebhook && submission) {
+          try {
+            const faction = await getFactionById(submission.winnerFactionId);
+            await fetch(discordWebhook, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                embeds: [{
+                  title: "❌ Win Rejected",
+                  description: `Win submission from ${faction?.name} was rejected`,
+                  color: 0xFF0000,
+                  fields: [
+                    { name: "Reason", value: input.reason, inline: false },
+                  ],
+                  timestamp: new Date().toISOString(),
+                }],
+              }),
+            });
+          } catch (err) {
+            console.error("Discord notification failed:", err);
+          }
+        }
+        
         return { success: true };
       }),
   }),

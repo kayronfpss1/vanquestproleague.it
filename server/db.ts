@@ -510,6 +510,13 @@ export async function getFactionById(id: number) {
   return result[0];
 }
 
+export async function getFactionByName(name: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(factions).where(eq(factions.name, name)).limit(1);
+  return result[0];
+}
+
 export async function addFactionMember(factionId: number, userId: number, assignedBy: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
