@@ -232,6 +232,17 @@ export const appRouter = router({
       const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const matches24h = matches.filter(m => new Date(m.createdAt) > oneDayAgo);
       
+      // Add team logos to recent matches
+      const recentMatchesWithLogos = matches.slice(-5).map(match => {
+        const winnerTeam = teams.find(t => t.id === match.winnerId);
+        const loserTeam = teams.find(t => t.id === match.loserId);
+        return {
+          ...match,
+          winnerLogoUrl: winnerTeam?.logoUrl,
+          loserLogoUrl: loserTeam?.logoUrl,
+        };
+      });
+      
       return {
         totalTeams: teams.length,
         totalMatches: matches.length,
@@ -239,7 +250,7 @@ export const appRouter = router({
         champion: champion,
         matches24h: matches24h.length,
         bestStreakTeam: bestStreakTeam,
-        recentMatches: matches.slice(-5),
+        recentMatches: recentMatchesWithLogos,
       };
     }),
   }),

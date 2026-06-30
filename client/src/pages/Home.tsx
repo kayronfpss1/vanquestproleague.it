@@ -204,11 +204,15 @@ export default function Home() {
                   <span className="text-xs font-display text-muted-foreground w-12 flex-shrink-0">#{match.id}</span>
                   <div className="flex-1 flex items-center gap-3 min-w-0">
                     <div className="flex items-center gap-2 min-w-0">
+                      {match.winnerLogoUrl && <img src={match.winnerLogoUrl} alt="" className="w-6 h-6 rounded flex-shrink-0" />}
                       <Trophy className="w-4 h-4 text-secondary flex-shrink-0" />
                       <span className="font-display font-700 text-foreground truncate">{match.winnerName}</span>
                     </div>
                     <span className="text-muted-foreground text-xs font-display flex-shrink-0">VS</span>
-                    <span className="font-display font-500 text-muted-foreground truncate">{match.loserName}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      {match.loserLogoUrl && <img src={match.loserLogoUrl} alt="" className="w-6 h-6 rounded flex-shrink-0" />}
+                      <span className="font-display font-500 text-muted-foreground truncate">{match.loserName}</span>
+                    </div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <span className="text-win font-display font-700 text-sm">+{match.eloChange}</span>
@@ -228,7 +232,7 @@ export default function Home() {
         <div className="container text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Swords className="w-5 h-5 text-primary" />
-            <span className="font-display font-700 tracking-widest text-gold-gradient">VANQUEST PRO LEAGUE</span>
+            <span className="font-display font-700 tracking-widest text-azure-bright">VANQUEST PRO LEAGUE</span>
           </div>
           <p className="text-xs text-muted-foreground font-sans">Created by @kayronfpss1.</p>
         </div>
