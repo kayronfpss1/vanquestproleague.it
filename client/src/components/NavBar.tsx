@@ -18,6 +18,7 @@ export default function NavBar() {
   const { data: userFactions } = trpc.factions.getUserFactions.useQuery(undefined, { enabled: !!user });
   const isAuthenticated = !!user;
   const hasFaction = (userFactions && userFactions.length > 0);
+  const isStaff = user?.role === "admin" || user?.role === "staff" || user?.role === "ceo";
   const logoutMutation = trpc.customAuth.logout.useMutation({
     onSuccess: () => { window.location.href = "/"; },
   });
@@ -60,16 +61,18 @@ export default function NavBar() {
             ))}
             {isAuthenticated && (
               <>
-                <Link href="/staff">
-                  <button className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-sans font-600 tracking-wide transition-all duration-200 ${
-                    isActive("/staff")
-                      ? "bg-secondary/20 text-secondary border border-secondary/30"
-                      : "text-muted-foreground hover:text-secondary hover:bg-secondary/10"
-                  }`}>
-                    <Shield className="w-4 h-4" />
-                    Staff
-                  </button>
-                </Link>
+                {isStaff && (
+                  <Link href="/staff">
+                    <button className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-sans font-600 tracking-wide transition-all duration-200 ${
+                      isActive("/staff")
+                        ? "bg-secondary/20 text-secondary border border-secondary/30"
+                        : "text-muted-foreground hover:text-secondary hover:bg-secondary/10"
+                    }`}>
+                      <Shield className="w-4 h-4" />
+                      Staff
+                    </button>
+                  </Link>
+                )}
                 {user?.role === "admin" && (
                   <Link href="/admin">
                     <button className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-sans font-600 tracking-wide transition-all duration-200 ${
@@ -93,7 +96,7 @@ export default function NavBar() {
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent border border-border">
                   <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   <span className="text-sm font-sans font-500 text-foreground">{user?.name}</span>
-                  {user?.role === "admin" && (
+                  {isStaff && (
                     <span className="stat-badge bg-secondary/20 text-secondary border border-secondary/30">STAFF</span>
                   )}
                 </div>
@@ -148,12 +151,14 @@ export default function NavBar() {
             ))}
             {isAuthenticated && (
               <>
-                <Link href="/staff" onClick={() => setMobileOpen(false)}>
-                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans font-600 tracking-wide text-muted-foreground hover:text-secondary hover:bg-secondary/10 transition-all">
-                    <Shield className="w-4 h-4" />
-                    Staff Dashboard
-                  </button>
-                </Link>
+                {isStaff && (
+                  <Link href="/staff" onClick={() => setMobileOpen(false)}>
+                    <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans font-600 tracking-wide text-muted-foreground hover:text-secondary hover:bg-secondary/10 transition-all">
+                      <Shield className="w-4 h-4" />
+                      Staff Dashboard
+                    </button>
+                  </Link>
+                )}
                 {user?.role === "admin" && (
                   <Link href="/admin" onClick={() => setMobileOpen(false)}>
                     <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans font-600 tracking-wide text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all">

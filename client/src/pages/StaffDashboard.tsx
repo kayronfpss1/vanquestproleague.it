@@ -43,7 +43,9 @@ export default function StaffDashboard() {
     );
   }
 
-  if (user?.role !== "admin") {
+  const isStaff = user?.role === "admin" || user?.role === "staff" || user?.role === "ceo";
+
+  if (!isStaff) {
     return (
       <div className="min-h-screen bg-grid pt-24 pb-16 flex items-center justify-center">
         <div className="card-premium p-10 text-center max-w-md w-full animate-scale-in">

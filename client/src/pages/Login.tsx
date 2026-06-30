@@ -13,6 +13,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const utils = trpc.useUtils();
   const loginMutation = trpc.customAuth.login.useMutation();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -25,6 +26,7 @@ export default function Login() {
     setLoading(true);
     try {
       await loginMutation.mutateAsync({ identifier, password });
+      await utils.customAuth.me.invalidate();
       toast.success("Login effettuato!");
       navigate("/");
     } catch (error: any) {
