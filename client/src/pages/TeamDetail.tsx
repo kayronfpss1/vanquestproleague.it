@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Trophy, ArrowLeft, Swords, TrendingUp, TrendingDown, Flame, Star, Shield, Upload, Image } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { EloBadge, StreakBadge, KdRatio, WinRateBar, EloChange, TableSkeleton } from "@/components/EsportUI";
+import { EloBadge, StreakBadge, KdRatio, WinRateBar, EloChange, TableSkeleton, TierBadge } from "@/components/EsportUI";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -28,6 +28,8 @@ export default function TeamDetail() {
   const { data: team, isLoading: loadingTeam, refetch: refetchTeam } = trpc.teams.getById.useQuery({ id: teamId }, { enabled: !!teamId });
   const { data: matchHistory, isLoading: loadingMatches } = trpc.matches.getByTeamId.useQuery({ teamId }, { enabled: !!teamId });
   const { data: eloHistory, isLoading: loadingElo } = trpc.eloHistory.getByTeamId.useQuery({ teamId }, { enabled: !!teamId });
+  const { data: allTeams } = trpc.leaderboard.byElo.useQuery({ limit: 1000 });
+  const teamRank = allTeams?.findIndex(t => t.id === teamId) ?? -1;
   
   const updateLogoMutation = trpc.teams.updateLogo.useMutation({
     onSuccess: () => {
@@ -152,7 +154,7 @@ export default function TeamDetail() {
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-3 mb-2">
                 <h1 className="text-3xl md:text-4xl font-display font-900 text-foreground">{team.name}</h1>
-                <EloBadge elo={team.elo} />
+                {teamRank >= 0 && <TierBadge rank={teamRank + 1} />}
               </div>
               <div className="flex flex-wrap items-center gap-4">
                 <span className="text-2xl font-display font-800 text-secondary text-glow-gold">{team.elo} <span className="text-sm text-muted-foreground font-500">ELO</span></span>
