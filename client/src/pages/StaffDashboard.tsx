@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { TableSkeleton } from "@/components/EsportUI";
 
-type Tab = "teams" | "matches" | "logs" | "factions" | "wins";
+type Tab = "teams" | "matches" | "logs" | "factions" | "wins" | "users";
 
 export default function StaffDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -60,6 +60,7 @@ export default function StaffDashboard() {
     { id: "matches" as Tab, label: "MATCH MANAGEMENT", icon: Swords },
     { id: "factions" as Tab, label: "FACTIONS", icon: Shield },
     { id: "wins" as Tab, label: "WIN SUBMISSIONS", icon: Trophy },
+    { id: "users" as Tab, label: "USERS", icon: Users },
     { id: "logs" as Tab, label: "STAFF LOGS", icon: ClipboardList },
   ];
 
@@ -104,6 +105,7 @@ export default function StaffDashboard() {
           {activeTab === "matches" && <MatchManagement />}
           {activeTab === "factions" && <FactionManagement />}
           {activeTab === "wins" && <WinSubmissions />}
+          {activeTab === "users" && <UserManagement />}
           {activeTab === "logs" && <StaffLogs />}
         </div>
       </div>
@@ -629,3 +631,123 @@ function WinSubmissions() {
   );
 }
 
+// ─── User Management ──────────────────────────────────────────────────────────
+function UserManagement() {
+  const { data: users, isLoading } = trpc.admin.users.useQuery();
+  const { data: factions } = trpc.factions.list.useQuery();
+  const utils = trpc.useUtils();
+  const [selectedUser, setSelectedUser] = useState<number | null>(null);
+  const [selectedFaction, setSelectedFaction] = useState<number | null>(null);
+
+  const addFactionRole = trpc.factions.addMember.useMutation({
+    onSuccess: () => {
+      utils.admin.users.invalidate();
+      toast.success("Ruolo fazione assegnato!");
+      setSelectedUser(null);
+      setSelectedFaction(null);
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const removeFactionRole = trpc.factions.removeMember.useMutation({
+    onSuccess: () => {
+      utils.admin.users.invalidate();
+      toast.success("Ruolo fazione rimosso!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="card-premium p-6">
+        <h3 className="text-lg font-display font-700 text-foreground mb-4 flex items-center gap-2">
+          <Users className="w-5 h-5 text-primary" /> GESTIONE UTENTI
+        </h3>
+
+        {isLoading ? (
+          <TableSkeleton />
+        ) : users && users.length > 0 ? (
+          <div className="space-y-3">
+            {users.map((u: any) => (
+              <div key={u.id} className="p-4 rounded-lg bg-secondary/10 border border-secondary/20">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <p className="font-display font-600 text-foreground">{u.name}</p>
+                    <p className="text-xs text-muted-foreground">{u.email}</p>
+                  </div>
+                  <span className="stat-badge bg-primary/20 text-primary border border-primary/30">{u.role}</span>
+                </div>
+
+                {/* User Factions */}
+                {u.factionMembers && u.factionMembers.length > 0 && (
+                  <div className="mb-3 p-2 rounded bg-primary/5 border border-primary/10">
+                    <p className="text-xs font-display font-600 text-primary mb-2">FAZIONI ASSEGNATE:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {u.factionMembers.map((fm: any) => {
+                        const faction = factions?.find(f => f.id === fm.factionId);
+                        return (
+                          <div key={fm.id} className="flex items-center gap-2 px-2 py-1 rounded bg-primary/20 border border-primary/30">
+                            <span className="text-xs text-primary">{faction?.name}</span>
+                            <button
+                              onClick={() => removeFactionRole.mutate({ factionId: fm.factionId, userId: u.id })}
+                              disabled={removeFactionRole.isPending}
+                              className="text-xs text-destructive hover:text-destructive/80 transition-all"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Add Faction */}
+                {selectedUser === u.id ? (
+                  <div className="flex gap-2">
+                    <select
+                      value={selectedFaction || ""}
+                      onChange={(e) => setSelectedFaction(parseInt(e.target.value))}
+                      className="flex-1 px-2 py-1 rounded text-xs bg-secondary/20 border border-secondary/30 text-foreground"
+                    >
+                      <option value="">Seleziona fazione...</option>
+                      {factions?.map(f => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => {
+                        if (selectedFaction) {
+                          addFactionRole.mutate({ factionId: selectedFaction, userId: u.id });
+                        }
+                      }}
+                      disabled={!selectedFaction || addFactionRole.isPending}
+                      className="px-3 py-1 rounded text-xs bg-green-500/20 hover:bg-green-500/30 text-green-400 font-600 disabled:opacity-50"
+                    >
+                      ASSEGNA
+                    </button>
+                    <button
+                      onClick={() => setSelectedUser(null)}
+                      className="px-3 py-1 rounded text-xs bg-secondary/20 hover:bg-secondary/30 text-foreground font-600"
+                    >
+                      ANNULLA
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setSelectedUser(u.id)}
+                    className="w-full px-3 py-1 rounded text-xs bg-primary/20 hover:bg-primary/30 text-primary font-600 transition-all"
+                  >
+                    + AGGIUNGI RUOLO FAZIONE
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-center py-8">Nessun utente trovato</p>
+        )}
+      </div>
+    </div>
+  );
+}
