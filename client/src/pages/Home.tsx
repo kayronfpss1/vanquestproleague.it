@@ -17,7 +17,7 @@ export default function Home() {
         </div>
         <div className="container relative z-10">
           <div className="inline-flex items-center justify-center mb-6 animate-fade-in">
-            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1536'%3E%3Crect fill='%2300d4ff' width='1024' height='1536'/%3E%3Ctext x='512' y='768' font-size='300' fill='white' text-anchor='middle' dominant-baseline='middle' font-family='Arial' font-weight='bold'%3EVANQUEST%3C/text%3E%3C/svg%3E" alt="VANQUEST Pro League" className="h-24 w-auto" />
+            <img src="https://i.postimg.cc/dV1szdFg/B0E7C9B8-C7D7-41F7-BE47-562605946559.png" alt="VANQUEST Pro League" className="h-24 w-auto" />
           </div>
           <h1 className="text-5xl md:text-7xl font-display font-900 mb-4 animate-fade-in-up delay-100">
             <span className="text-azure-bright">VANQUEST</span>
