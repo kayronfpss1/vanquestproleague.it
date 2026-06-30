@@ -184,3 +184,14 @@ export const winSubmissions = mysqlTable("win_submissions", {
 
 export type WinSubmission = typeof winSubmissions.$inferSelect;
 export type InsertWinSubmission = typeof winSubmissions.$inferInsert;
+
+// ─── Faction Roles (roles for factions) ──────────────────────────────────────────
+export const factionRoles = mysqlTable("faction_roles", {
+  id: int("id").autoincrement().primaryKey(),
+  factionId: int("faction_id").notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FactionRole = typeof factionRoles.$inferSelect;
+export type InsertFactionRole = typeof factionRoles.$inferInsert;

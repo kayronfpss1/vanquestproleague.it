@@ -1,6 +1,6 @@
 import { eq, desc, asc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, teams, matches, eloHistory, staffLogs, apiKeys, authSessions, discordWebhooks, teamInvitations, factions, factionMembers, winSubmissions, InsertTeam, InsertMatch, InsertEloHistory, InsertStaffLog, InsertApiKey, InsertAuthSession, InsertDiscordWebhook, InsertTeamInvitation, InsertFaction, InsertFactionMember, InsertWinSubmission } from "../drizzle/schema";
+import { InsertUser, users, teams, matches, eloHistory, staffLogs, apiKeys, authSessions, discordWebhooks, teamInvitations, factions, factionMembers, winSubmissions, factionRoles, InsertTeam, InsertMatch, InsertEloHistory, InsertStaffLog, InsertApiKey, InsertAuthSession, InsertDiscordWebhook, InsertTeamInvitation, InsertFaction, InsertFactionMember, InsertWinSubmission, InsertFactionRole } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { randomBytes } from "crypto";
 
@@ -584,4 +584,18 @@ export async function updateWinSubmissionLoser(submissionId: number, loserFactio
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.update(winSubmissions).set({ loserFactionId }).where(eq(winSubmissions.id, submissionId));
+}
+
+// ─── Faction Roles ────────────────────────────────────────────────────────────
+export async function createFactionRole(factionId: number, name: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(factionRoles).values({ factionId, name });
+  return result;
+}
+
+export async function getFactionRolesByFactionId(factionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(factionRoles).where(eq(factionRoles.factionId, factionId));
 }

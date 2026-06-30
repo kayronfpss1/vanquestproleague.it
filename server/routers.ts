@@ -396,13 +396,15 @@ export const appRouter = router({
     create: staffProcedure
       .input(z.object({ name: z.string().min(1), description: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
-        const { createFaction, addFactionMember, getFactionByName } = await import("./db");
+        const { createFaction, addFactionMember, getFactionByName, createFactionRole } = await import("./db");
         await createFaction({ name: input.name, description: input.description, createdBy: ctx.user.id });
         
-        // Auto-assign creator to the faction
+        // Auto-assign creator to the faction and create faction role
         const faction = await getFactionByName(input.name);
         if (faction) {
           await addFactionMember(faction.id, ctx.user.id, ctx.user.id);
+          // Auto-create faction role with the same name
+          await createFactionRole(faction.id, input.name);
         }
         
         await logStaff(ctx, "CREATE_FACTION", `Created faction: ${input.name}`);
