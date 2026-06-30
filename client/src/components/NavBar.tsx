@@ -37,7 +37,7 @@ export default function NavBar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <img src="/manus-storage/vanquest-logo_7f180966.png" alt="VANQUEST Pro League" className="h-12 w-auto" />
+            <img src="https://cdn.discordapp.com/attachments/1516586258355458189/1516586593484275764/B0E7C9B8-C7D7-41F7-BE47-562605946559.png?ex=6a44fb14&is=6a43a994&hm=4133b3d203cc21878a046dc6b6a49f7c0fb5149d3144a3aab7b0962bda27e83a" alt="VANQUEST Pro League" className="h-12 w-auto" />
             <div className="hidden sm:flex flex-col">
               <span className="font-display text-xs font-bold tracking-widest text-azure-bright leading-tight">VANQUEST</span>
               <span className="font-display text-xs font-bold tracking-widest text-azure-bright leading-tight">PRO LEAGUE</span>
