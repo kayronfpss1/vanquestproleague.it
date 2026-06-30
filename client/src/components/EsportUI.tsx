@@ -83,6 +83,24 @@ export function EloChange({ change, isWinner }: { change: number; isWinner: bool
   );
 }
 
+// ─── Tier Badge (based on rank position) ─────────────────────────────────────
+export function TierBadge({ rank }: { rank: number }) {
+  let tier = "GOLD";
+  let colors = "bg-amber-500/20 text-amber-400 border-amber-500/40";
+  
+  if (rank === 1) {
+    tier = "MASTER";
+    colors = "bg-yellow-500/20 text-yellow-300 border-yellow-500/40";
+  } else if (rank >= 2 && rank <= 10) {
+    tier = "DIAMOND";
+    colors = "bg-cyan-500/20 text-cyan-300 border-cyan-500/40";
+  }
+  
+  return (
+    <span className={`stat-badge border ${colors}`}>{tier}</span>
+  );
+}
+
 // ─── Streak Badge ─────────────────────────────────────────────────────────────
 export function StreakBadge({ streak }: { streak: number }) {
   if (streak === 0) return <span className="text-muted-foreground text-sm">—</span>;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Trophy, TrendingUp, Swords, ChevronRight } from "lucide-react";
-import { RankBadge, EloBadge, StreakBadge, KdRatio, WinRateBar, LiveIndicator, TableSkeleton } from "@/components/EsportUI";
+import { RankBadge, EloBadge, StreakBadge, KdRatio, WinRateBar, LiveIndicator, TableSkeleton, TierBadge } from "@/components/EsportUI";
 
 type Tab = "elo" | "wins" | "kd";
 
@@ -89,7 +89,7 @@ export default function Leaderboard() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-display font-700 text-foreground truncate">{team.name}</p>
-                      <EloBadge elo={team.elo} />
+                      <TierBadge rank={i + 1} />
                     </div>
                   </div>
 
