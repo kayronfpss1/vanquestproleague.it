@@ -511,7 +511,15 @@ export async function getFactionMembers(factionId: number) {
 export async function getUserFactions(userId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(factionMembers).where(eq(factionMembers.userId, userId));
+  const members = await db.select().from(factionMembers).where(eq(factionMembers.userId, userId));
+  // Get full faction data for each member
+  const factionData = await Promise.all(
+    members.map(async (member) => {
+      const faction = await db.select().from(factions).where(eq(factions.id, member.factionId));
+      return faction[0];
+    })
+  );
+  return factionData.filter(Boolean);
 }
 
 export async function removeFactionMember(factionId: number, userId: number) {

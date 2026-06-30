@@ -419,18 +419,24 @@ export const appRouter = router({
         await logStaff(ctx, "REMOVE_FACTION_MEMBER", `Removed user ${input.userId} from faction ${input.factionId}`);
         return { success: true };
       }),
+    getUserFactions: publicProcedure
+      .input(z.object({ userId: z.number() }))
+      .query(async ({ input }) => {
+        const { getUserFactions } = await import("./db");
+        return getUserFactions(input.userId);
+      }),
   }),
 
   // ─── Win Submissions ──────────────────────────────────────────────────────────
   winSubmissions: router({
     create: protectedProcedure
-      .input(z.object({ winnerFactionId: z.number(), loserFactionId: z.number(), screenshotUrl: z.string().optional() }))
+      .input(z.object({ winnerFactionId: z.number(), screenshotUrl: z.string() }))
       .mutation(async ({ input, ctx }) => {
         const { createWinSubmission } = await import("./db");
         await createWinSubmission({
           submittedBy: ctx.user.id,
           winnerFactionId: input.winnerFactionId,
-          loserFactionId: input.loserFactionId,
+          loserFactionId: 0, // Will be set by staff when approving
           screenshotUrl: input.screenshotUrl,
         });
         return { success: true };

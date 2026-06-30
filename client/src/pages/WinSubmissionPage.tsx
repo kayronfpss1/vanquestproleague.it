@@ -7,22 +7,20 @@ import { Trophy, Upload, Lock, AlertTriangle } from "lucide-react";
 
 export default function WinSubmissionPage() {
   const { user, isAuthenticated, loading } = useAuth();
-  const [winnerFactionId, setWinnerFactionId] = useState<number | null>(null);
-  const [loserFactionId, setLoserFactionId] = useState<number | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: factions } = trpc.factions.list.useQuery();
-  const { data: userFactions } = trpc.factions.getMembers.useQuery(
-    { factionId: winnerFactionId || 0 },
-    { enabled: !!winnerFactionId }
+  // Get user's faction (they can only submit for their own faction)
+  const { data: userFactions } = trpc.factions.getUserFactions.useQuery(
+    { userId: user?.id || 0 },
+    { enabled: !!user?.id }
   );
+
+  const userFaction = userFactions?.[0]; // Get first faction user belongs to
 
   const submitWin = trpc.winSubmissions.create.useMutation({
     onSuccess: () => {
       toast.success("Win submission sent! Staff will review it shortly.");
-      setWinnerFactionId(null);
-      setLoserFactionId(null);
       setScreenshotUrl("");
     },
     onError: (e: any) => toast.error(e.message),
@@ -57,9 +55,7 @@ export default function WinSubmissionPage() {
   }
 
   // Check if user is part of any faction
-  const hasUserFaction = factions && factions.length > 0;
-
-  if (!hasUserFaction) {
+  if (!userFaction) {
     return (
       <div className="min-h-screen bg-grid pt-24 pb-16 flex items-center justify-center">
         <div className="card-premium p-10 text-center max-w-md w-full animate-scale-in">
@@ -91,39 +87,15 @@ export default function WinSubmissionPage() {
         {/* Form */}
         <div className="card-premium p-8 animate-fade-in-up delay-100">
           <div className="space-y-6">
-            {/* Winner Faction */}
-            <div>
-              <label className="block text-sm font-display font-600 text-foreground mb-2">YOUR FACTION (WINNER)</label>
-              <select
-                value={winnerFactionId ?? ""}
-                onChange={(e) => setWinnerFactionId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-4 py-3 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">Select your faction...</option>
-                {factions?.map((f) => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Loser Faction */}
-            <div>
-              <label className="block text-sm font-display font-600 text-foreground mb-2">OPPONENT FACTION (LOSER)</label>
-              <select
-                value={loserFactionId ?? ""}
-                onChange={(e) => setLoserFactionId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-4 py-3 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">Select opponent faction...</option>
-                {factions?.filter(f => f.id !== winnerFactionId).map((f) => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
-                ))}
-              </select>
+            {/* Your Faction Info */}
+            <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+              <p className="text-sm font-display font-600 text-foreground mb-1">YOUR FACTION (WINNER)</p>
+              <p className="text-2xl font-display font-900 text-primary">{userFaction.name}</p>
             </div>
 
             {/* Screenshot URL */}
             <div>
-              <label className="block text-sm font-display font-600 text-foreground mb-2">SCREENSHOT URL</label>
+              <label className="block text-sm font-display font-600 text-foreground mb-2">SCREENSHOT</label>
               <input
                 type="url"
                 placeholder="https://example.com/screenshot.png"
@@ -131,29 +103,28 @@ export default function WinSubmissionPage() {
                 onChange={(e) => setScreenshotUrl(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               />
-              <p className="text-xs text-muted-foreground mt-2">Upload your screenshot to an image hosting service and paste the URL here.</p>
+              <p className="text-xs text-muted-foreground mt-2">Upload your screenshot to an image hosting service and paste the URL here. Staff will identify the opponent faction from the screenshot.</p>
             </div>
 
             {/* Submit Button */}
             <button
               onClick={() => {
-                if (!winnerFactionId || !loserFactionId) {
-                  toast.error("Please select both factions");
+                if (!screenshotUrl) {
+                  toast.error("Please provide a screenshot URL");
                   return;
                 }
                 setIsSubmitting(true);
                 submitWin.mutate(
                   {
-                    winnerFactionId,
-                    loserFactionId,
-                    screenshotUrl: screenshotUrl || undefined,
+                    winnerFactionId: userFaction.id,
+                    screenshotUrl,
                   },
                   {
                     onSettled: () => setIsSubmitting(false),
                   }
                 );
               }}
-              disabled={!winnerFactionId || !loserFactionId || isSubmitting || submitWin.isPending}
+              disabled={!screenshotUrl || isSubmitting || submitWin.isPending}
               className="w-full px-6 py-3 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-display font-700 tracking-widest disabled:opacity-50 transition-all flex items-center justify-center gap-2"
             >
               <Upload className="w-5 h-5" />
@@ -164,7 +135,7 @@ export default function WinSubmissionPage() {
           {/* Info Box */}
           <div className="mt-8 p-4 rounded-lg bg-secondary/10 border border-secondary/20">
             <p className="text-sm text-muted-foreground">
-              <span className="font-display font-600 text-foreground">📋 Info:</span> After submission, staff will review your screenshot and approve or reject the win. Once approved, ELO will be automatically updated for both factions.
+              <span className="font-display font-600 text-foreground">📋 Info:</span> After submission, staff will review your screenshot, identify the opponent faction, and approve or reject the win. Once approved, ELO will be automatically updated for both factions.
             </p>
           </div>
         </div>
