@@ -517,7 +517,8 @@ export async function getUserFactions(userId: number) {
 export async function removeFactionMember(factionId: number, userId: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  await db.delete(factionMembers).where(eq(factionMembers.factionId, factionId) && eq(factionMembers.userId, userId));
+  const { and } = await import("drizzle-orm");
+  await db.delete(factionMembers).where(and(eq(factionMembers.factionId, factionId), eq(factionMembers.userId, userId)));
 }
 
 // ─── Win Submission helpers ───────────────────────────────────────────────────
