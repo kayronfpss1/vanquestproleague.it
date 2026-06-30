@@ -27,7 +27,7 @@ export default function MatchHistory() {
 
         {/* Search */}
         <div className="relative mb-6 animate-fade-in-up delay-100 flex items-center gap-3">
-          <img src="https://cdn.discordapp.com/attachments/1516586258355458189/1516586593484275764/B0E7C9B8-C7D7-41F7-BE47-562605946559.png?ex=6a44fb14&is=6a43a994&hm=4133b3d203cc21878a046dc6b6a49f7c0fb5149d3144a3aab7b0962bda27e83a" alt="VANQUEST Pro League" className="h-10 w-auto" />
+          <img src="https://i.postimg.cc/dV1szdFg/B0E7C9B8-C7D7-41F7-BE47-562605946559.png" alt="VANQUEST Pro League" className="h-10 w-auto" />
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
