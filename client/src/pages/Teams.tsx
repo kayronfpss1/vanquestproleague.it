@@ -2,13 +2,18 @@ import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Users, Trophy, Search } from "lucide-react";
 import { useState } from "react";
-import { EloBadge, KdRatio, StreakBadge, WinRateBar, TableSkeleton } from "@/components/EsportUI";
+import { EloBadge, KdRatio, StreakBadge, WinRateBar, TableSkeleton, TierBadge } from "@/components/EsportUI";
 
 export default function Teams() {
   const [search, setSearch] = useState("");
   const { data: teams, isLoading } = trpc.teams.list.useQuery();
+  const { data: allTeams } = trpc.leaderboard.byElo.useQuery({ limit: 1000 });
 
   const filtered = teams?.filter(t => t.name.toLowerCase().includes(search.toLowerCase())) ?? [];
+  
+  const getTeamRank = (teamId: number) => {
+    return (allTeams?.findIndex(t => t.id === teamId) ?? -1) + 1;
+  };
 
   return (
     <div className="min-h-screen bg-grid pt-24 pb-16">
@@ -62,7 +67,7 @@ export default function Teams() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-display font-800 text-foreground truncate mb-1">{team.name}</h3>
-                      <EloBadge elo={team.elo} />
+                      <TierBadge rank={getTeamRank(team.id)} />
                     </div>
                     <span className="text-xl font-display font-800 text-secondary flex-shrink-0">{team.elo}</span>
                   </div>
