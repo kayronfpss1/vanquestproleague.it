@@ -565,3 +565,9 @@ export async function getWinSubmissionById(id: number) {
   const result = await db.select().from(winSubmissions).where(eq(winSubmissions.id, id)).limit(1);
   return result[0];
 }
+
+export async function updateWinSubmissionLoser(submissionId: number, loserFactionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(winSubmissions).set({ loserFactionId }).where(eq(winSubmissions.id, submissionId));
+}

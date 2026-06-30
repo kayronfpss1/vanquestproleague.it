@@ -446,15 +446,18 @@ export const appRouter = router({
       return getPendingWinSubmissions();
     }),
     approve: staffProcedure
-      .input(z.object({ submissionId: z.number() }))
+      .input(z.object({ submissionId: z.number(), loserFactionId: z.number() }))
       .mutation(async ({ input, ctx }) => {
-        const { getWinSubmissionById, approveWinSubmission, updateTeam, getTeamById } = await import("./db");
+        const { getWinSubmissionById, approveWinSubmission, updateTeam, getTeamById, updateWinSubmissionLoser } = await import("./db");
         const submission = await getWinSubmissionById(input.submissionId);
         if (!submission) throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
         
+        // Update submission with loser faction
+        await updateWinSubmissionLoser(input.submissionId, input.loserFactionId);
+        
         // Get teams
         const winnerTeam = await getTeamById(submission.winnerFactionId);
-        const loserTeam = await getTeamById(submission.loserFactionId);
+        const loserTeam = await getTeamById(input.loserFactionId);
         if (!winnerTeam || !loserTeam) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
         
         // Calculate ELO

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Menu, X, Trophy, Swords, Users, History, Shield, BarChart3 } from "lucide-react";
+import { Menu, X, Trophy, Swords, Users, History, Shield, BarChart3, User } from "lucide-react";
 
 const navLinks = [
   { href: "/", label: "Home", icon: Trophy },
@@ -142,6 +142,12 @@ export default function NavBar() {
             ))}
             {isAuthenticated && (
               <>
+                <Link href="/profile" onClick={() => setMobileOpen(false)}>
+                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans font-600 tracking-wide text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all">
+                    <User className="w-4 h-4" />
+                    Profilo
+                  </button>
+                </Link>
                 <Link href="/staff" onClick={() => setMobileOpen(false)}>
                   <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans font-600 tracking-wide text-muted-foreground hover:text-secondary hover:bg-secondary/10 transition-all">
                     <Shield className="w-4 h-4" />
