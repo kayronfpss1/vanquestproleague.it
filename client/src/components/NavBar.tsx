@@ -8,6 +8,7 @@ const navLinks = [
   { href: "/leaderboard", label: "Leaderboard", icon: BarChart3 },
   { href: "/teams", label: "Teams", icon: Users },
   { href: "/matches", label: "Freeroam Recenti", icon: History },
+  { href: "/submit-win", label: "Assegnazione Win", icon: Swords },
 ];
 
 export default function NavBar() {
