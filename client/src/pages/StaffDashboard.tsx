@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { TableSkeleton } from "@/components/EsportUI";
 
-type Tab = "teams" | "matches" | "logs";
+type Tab = "teams" | "matches" | "logs" | "factions" | "wins";
 
 export default function StaffDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -58,6 +58,8 @@ export default function StaffDashboard() {
   const tabs = [
     { id: "teams" as Tab, label: "TEAM MANAGEMENT", icon: Users },
     { id: "matches" as Tab, label: "MATCH MANAGEMENT", icon: Swords },
+    { id: "factions" as Tab, label: "FACTIONS", icon: Shield },
+    { id: "wins" as Tab, label: "WIN SUBMISSIONS", icon: Trophy },
     { id: "logs" as Tab, label: "STAFF LOGS", icon: ClipboardList },
   ];
 
@@ -100,6 +102,8 @@ export default function StaffDashboard() {
         <div className="animate-fade-in">
           {activeTab === "teams" && <TeamManagement />}
           {activeTab === "matches" && <MatchManagement />}
+          {activeTab === "factions" && <FactionManagement />}
+          {activeTab === "wins" && <WinSubmissions />}
           {activeTab === "logs" && <StaffLogs />}
         </div>
       </div>
@@ -409,6 +413,192 @@ function StaffLogs() {
           </div>
         ))
       )}
+    </div>
+  );
+}
+
+
+// ─── Faction Management ──────────────────────────────────────────────────────
+function FactionManagement() {
+  const { data: factions, isLoading } = trpc.factions.list.useQuery();
+  const { data: allUsers } = trpc.admin.users.useQuery();
+  const [newFactionName, setNewFactionName] = useState("");
+  const [newFactionDesc, setNewFactionDesc] = useState("");
+  const [selectedFaction, setSelectedFaction] = useState<number | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const utils = trpc.useUtils();
+
+  const createFaction = trpc.factions.create.useMutation({
+    onSuccess: () => { utils.factions.list.invalidate(); setNewFactionName(""); setNewFactionDesc(""); toast.success("Faction created!"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const addMember = trpc.factions.addMember.useMutation({
+    onSuccess: () => { utils.factions.list.invalidate(); setSelectedUserId(null); toast.success("Member added to faction!"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-6">
+      {/* Create Faction */}
+      <div className="card-premium p-6">
+        <h3 className="text-lg font-display font-700 text-foreground mb-4 flex items-center gap-2">
+          <Plus className="w-5 h-5 text-primary" /> CREATE FACTION
+        </h3>
+        <div className="space-y-3">
+          <input
+            type="text"
+            placeholder="Faction name..."
+            value={newFactionName}
+            onChange={(e) => setNewFactionName(e.target.value)}
+            className="w-full px-4 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+          <textarea
+            placeholder="Description (optional)..."
+            value={newFactionDesc}
+            onChange={(e) => setNewFactionDesc(e.target.value)}
+            className="w-full px-4 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            rows={3}
+          />
+          <button
+            onClick={() => createFaction.mutate({ name: newFactionName, description: newFactionDesc })}
+            disabled={!newFactionName || createFaction.isPending}
+            className="w-full px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-display font-600 disabled:opacity-50"
+          >
+            {createFaction.isPending ? "Creating..." : "Create Faction"}
+          </button>
+        </div>
+      </div>
+
+      {/* Factions List */}
+      <div className="card-premium p-6">
+        <h3 className="text-lg font-display font-700 text-foreground mb-4">FACTIONS</h3>
+        {isLoading ? (
+          <TableSkeleton />
+        ) : factions && factions.length > 0 ? (
+          <div className="space-y-3">
+            {factions.map((faction) => (
+              <div key={faction.id} className="p-4 rounded-lg bg-secondary/10 border border-secondary/20">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="font-display font-600 text-foreground">{faction.name}</h4>
+                    {faction.description && <p className="text-sm text-muted-foreground">{faction.description}</p>}
+                  </div>
+                  <button
+                    onClick={() => setSelectedFaction(selectedFaction === faction.id ? null : faction.id)}
+                    className="px-3 py-1 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary font-display font-600 text-sm"
+                  >
+                    {selectedFaction === faction.id ? "Hide" : "Manage"}
+                  </button>
+                </div>
+                {selectedFaction === faction.id && (
+                  <div className="mt-3 pt-3 border-t border-secondary/20">
+                    <select
+                      value={selectedUserId ?? ""}
+                      onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
+                      className="w-full px-3 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground text-sm mb-2"
+                    >
+                      <option value="">Select player to add...</option>
+                      {allUsers?.map((u) => (
+                        <option key={u.id} value={u.id}>{u.username || u.name || `User ${u.id}`}</option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => {
+                        if (selectedUserId) {
+                          addMember.mutate({ factionId: faction.id, userId: selectedUserId });
+                        }
+                      }}
+                      disabled={!selectedUserId || addMember.isPending}
+                      className="w-full px-3 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary font-display font-600 text-sm disabled:opacity-50"
+                    >
+                      {addMember.isPending ? "Adding..." : "Add Member"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-center py-8">No factions yet</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Win Submissions ──────────────────────────────────────────────────────────
+function WinSubmissions() {
+  const { data: submissions, isLoading } = trpc.winSubmissions.getPending.useQuery();
+  const utils = trpc.useUtils();
+
+  const approveWin = trpc.winSubmissions.approve.useMutation({
+    onSuccess: () => { utils.winSubmissions.getPending.invalidate(); toast.success("Win approved and ELO updated!"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const rejectWin = trpc.winSubmissions.reject.useMutation({
+    onSuccess: () => { utils.winSubmissions.getPending.invalidate(); toast.success("Win rejected."); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  const [rejectReason, setRejectReason] = useState<Record<number, string>>({});
+
+  return (
+    <div className="space-y-6">
+      <div className="card-premium p-6">
+        <h3 className="text-lg font-display font-700 text-foreground mb-4 flex items-center gap-2">
+          <Trophy className="w-5 h-5 text-primary" /> PENDING WIN SUBMISSIONS
+        </h3>
+        {isLoading ? (
+          <TableSkeleton />
+        ) : submissions && submissions.length > 0 ? (
+          <div className="space-y-4">
+            {submissions.map((sub) => (
+              <div key={sub.id} className="p-4 rounded-lg bg-secondary/10 border border-secondary/20">
+                <div className="mb-3">
+                  <p className="font-display font-600 text-foreground">
+                    Faction {sub.winnerFactionId} vs Faction {sub.loserFactionId}
+                  </p>
+                  {sub.screenshotUrl && (
+                    <a href={sub.screenshotUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
+                      View Screenshot
+                    </a>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Submitted: {new Date(sub.createdAt).toLocaleString("it-IT")}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => approveWin.mutate({ submissionId: sub.id })}
+                    disabled={approveWin.isPending}
+                    className="flex-1 px-3 py-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 font-display font-600 text-sm disabled:opacity-50"
+                  >
+                    {approveWin.isPending ? "Approving..." : "✓ Approve"}
+                  </button>
+                  <input
+                    type="text"
+                    placeholder="Rejection reason..."
+                    value={rejectReason[sub.id] ?? ""}
+                    onChange={(e) => setRejectReason({ ...rejectReason, [sub.id]: e.target.value })}
+                    className="flex-1 px-3 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground text-sm placeholder-muted-foreground"
+                  />
+                  <button
+                    onClick={() => rejectWin.mutate({ submissionId: sub.id, reason: rejectReason[sub.id] || "No reason provided" })}
+                    disabled={rejectWin.isPending}
+                    className="flex-1 px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 font-display font-600 text-sm disabled:opacity-50"
+                  >
+                    {rejectWin.isPending ? "Rejecting..." : "✗ Reject"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-muted-foreground text-center py-8">No pending win submissions</p>
+        )}
+      </div>
     </div>
   );
 }

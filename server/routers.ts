@@ -219,9 +219,26 @@ export const appRouter = router({
     global: publicProcedure.query(async () => {
       const teams = await getAllTeams();
       const matches = await getAllMatches();
+      const allUsers = await getAllUsers();
+      
+      // Champion: first team in ELO leaderboard
+      const champion = teams.length > 0 ? teams.sort((a, b) => b.elo - a.elo)[0] : null;
+      
+      // Best streak team
+      const bestStreakTeam = teams.length > 0 ? teams.sort((a, b) => b.streak - a.streak)[0] : null;
+      
+      // Matches in last 24 hours
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const matches24h = matches.filter(m => new Date(m.createdAt) > oneDayAgo);
+      
       return {
         totalTeams: teams.length,
         totalMatches: matches.length,
+        totalPlayers: allUsers.length,
+        champion: champion,
+        matches24h: matches24h.length,
+        bestStreakTeam: bestStreakTeam,
         recentMatches: matches.slice(-5),
       };
     }),
@@ -362,6 +379,105 @@ export const appRouter = router({
       .mutation(async ({ input, ctx }) => {
         await deleteTeamInvitation(input.id);
         await logStaff(ctx, "DELETE_INVITATION", `Deleted invitation ${input.id}`);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Factions ────────────────────────────────────────────────────────────────
+  factions: router({
+    list: publicProcedure.query(async () => {
+      const { getAllFactions } = await import("./db");
+      return getAllFactions();
+    }),
+    create: staffProcedure
+      .input(z.object({ name: z.string().min(1), description: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const { createFaction } = await import("./db");
+        await createFaction({ name: input.name, description: input.description, createdBy: ctx.user.id });
+        await logStaff(ctx, "CREATE_FACTION", `Created faction: ${input.name}`);
+        return { success: true };
+      }),
+    getMembers: publicProcedure
+      .input(z.object({ factionId: z.number() }))
+      .query(async ({ input }) => {
+        const { getFactionMembers } = await import("./db");
+        return getFactionMembers(input.factionId);
+      }),
+    addMember: staffProcedure
+      .input(z.object({ factionId: z.number(), userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { addFactionMember } = await import("./db");
+        await addFactionMember(input.factionId, input.userId, ctx.user.id);
+        await logStaff(ctx, "ADD_FACTION_MEMBER", `Added user ${input.userId} to faction ${input.factionId}`);
+        return { success: true };
+      }),
+    removeMember: staffProcedure
+      .input(z.object({ factionId: z.number(), userId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { removeFactionMember } = await import("./db");
+        await removeFactionMember(input.factionId, input.userId);
+        await logStaff(ctx, "REMOVE_FACTION_MEMBER", `Removed user ${input.userId} from faction ${input.factionId}`);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Win Submissions ──────────────────────────────────────────────────────────
+  winSubmissions: router({
+    create: protectedProcedure
+      .input(z.object({ winnerFactionId: z.number(), loserFactionId: z.number(), screenshotUrl: z.string().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const { createWinSubmission } = await import("./db");
+        await createWinSubmission({
+          submittedBy: ctx.user.id,
+          winnerFactionId: input.winnerFactionId,
+          loserFactionId: input.loserFactionId,
+          screenshotUrl: input.screenshotUrl,
+        });
+        return { success: true };
+      }),
+    getPending: staffProcedure.query(async () => {
+      const { getPendingWinSubmissions } = await import("./db");
+      return getPendingWinSubmissions();
+    }),
+    approve: staffProcedure
+      .input(z.object({ submissionId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { getWinSubmissionById, approveWinSubmission, updateTeam, getTeamById } = await import("./db");
+        const submission = await getWinSubmissionById(input.submissionId);
+        if (!submission) throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
+        
+        // Get teams
+        const winnerTeam = await getTeamById(submission.winnerFactionId);
+        const loserTeam = await getTeamById(submission.loserFactionId);
+        if (!winnerTeam || !loserTeam) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
+        
+        // Calculate ELO
+        const eloChange = calculateEloChange(winnerTeam.elo, loserTeam.elo);
+        
+        // Update teams
+        await updateTeam(submission.winnerFactionId, {
+          wins: winnerTeam.wins + 1,
+          elo: winnerTeam.elo + eloChange,
+          streak: Math.max(1, (winnerTeam.streak || 0) + 1),
+          bestStreak: Math.max(winnerTeam.bestStreak, (winnerTeam.streak || 0) + 1),
+        });
+        await updateTeam(submission.loserFactionId, {
+          losses: loserTeam.losses + 1,
+          elo: Math.max(1, loserTeam.elo - eloChange),
+          streak: Math.min(-1, (loserTeam.streak || 0) - 1),
+        });
+        
+        // Approve submission
+        await approveWinSubmission(input.submissionId, ctx.user.id);
+        await logStaff(ctx, "APPROVE_WIN", `Approved win submission ${input.submissionId}`);
+        return { success: true };
+      }),
+    reject: staffProcedure
+      .input(z.object({ submissionId: z.number(), reason: z.string() }))
+      .mutation(async ({ input, ctx }) => {
+        const { rejectWinSubmission } = await import("./db");
+        await rejectWinSubmission(input.submissionId, input.reason);
+        await logStaff(ctx, "REJECT_WIN", `Rejected win submission ${input.submissionId}: ${input.reason}`);
         return { success: true };
       }),
   }),

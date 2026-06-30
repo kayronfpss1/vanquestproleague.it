@@ -17,7 +17,7 @@ export default function Home() {
         </div>
         <div className="container relative z-10">
           <div className="inline-flex items-center justify-center mb-6 animate-fade-in">
-            <img src="/manus-storage/vanquest-logo.png" alt="VANQUEST Pro League" className="h-24 w-auto" />
+            <img src="/manus-storage/vanquest-logo_49febe5b.png" alt="VANQUEST Pro League" className="h-24 w-auto" />
           </div>
           <h1 className="text-5xl md:text-7xl font-display font-900 mb-4 animate-fade-in-up delay-100">
             <span className="text-azure-bright">VANQUEST</span>
@@ -54,33 +54,33 @@ export default function Home() {
               <>
                 <div className="animate-fade-in-up delay-100">
                   <StatCard
-                    label="Active Teams"
-                    value={stats?.totalTeams ?? 0}
-                    icon={<Users className="w-5 h-5" />}
+                    label="Campione Attuale"
+                    value={stats?.champion?.name ?? "—"}
+                    icon={<Trophy className="w-5 h-5" />}
                     accent="blue"
                   />
                 </div>
                 <div className="animate-fade-in-up delay-150">
                   <StatCard
-                    label="Total Matches"
-                    value={stats?.totalMatches ?? 0}
-                    icon={<Swords className="w-5 h-5" />}
+                    label="Giocatori Registrati"
+                    value={stats?.totalPlayers ?? 0}
+                    icon={<Users className="w-5 h-5" />}
                     accent="azure"
                   />
                 </div>
                 <div className="animate-fade-in-up delay-200">
                   <StatCard
-                    label="Elo Start"
-                    value="1500"
-                    icon={<TrendingUp className="w-5 h-5" />}
+                    label="Match Ultime 24h"
+                    value={stats?.matches24h ?? 0}
+                    icon={<Swords className="w-5 h-5" />}
                     accent="green"
                   />
                 </div>
                 <div className="animate-fade-in-up delay-300">
                   <StatCard
-                    label="K Factor"
-                    value="32"
-                    icon={<Zap className="w-5 h-5" />}
+                    label="Team Più in Forma"
+                    value={stats?.bestStreakTeam?.name ?? "—"}
+                    icon={<TrendingUp className="w-5 h-5" />}
                     accent="blue"
                   />
                 </div>
@@ -228,7 +228,7 @@ export default function Home() {
         <div className="container text-center">
           <div className="flex items-center justify-center gap-2 mb-3">
             <Swords className="w-5 h-5 text-primary" />
-            <span className="font-display font-700 tracking-widest text-gold-gradient">ENVEART PRO LEAGUE</span>
+            <span className="font-display font-700 tracking-widest text-gold-gradient">VANQUEST PRO LEAGUE</span>
           </div>
           <p className="text-xs text-muted-foreground font-sans">Created by @kayronfpss1.</p>
         </div>

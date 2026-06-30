@@ -50,6 +50,13 @@
       "when": 1781028440010,
       "tag": "0006_mushy_famine",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1782781565532,
+      "tag": "0007_bizarre_quicksilver",
+      "breakpoints": true
     }
   ]
 }

@@ -142,3 +142,45 @@ export const teamInvitations = mysqlTable("team_invitations", {
 
 export type TeamInvitation = typeof teamInvitations.$inferSelect;
 export type InsertTeamInvitation = typeof teamInvitations.$inferInsert;
+
+// ─── Factions ────────────────────────────────────────────────────────────────────
+export const factions = mysqlTable("factions", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  description: text("description"),
+  createdBy: int("created_by").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Faction = typeof factions.$inferSelect;
+export type InsertFaction = typeof factions.$inferInsert;
+
+// ─── Faction Members (users assigned to factions) ────────────────────────────────
+export const factionMembers = mysqlTable("faction_members", {
+  id: int("id").autoincrement().primaryKey(),
+  factionId: int("faction_id").notNull(),
+  userId: int("user_id").notNull(),
+  assignedBy: int("assigned_by").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FactionMember = typeof factionMembers.$inferSelect;
+export type InsertFactionMember = typeof factionMembers.$inferInsert;
+
+// ─── Win Submissions (players submit wins for approval) ───────────────────────────
+export const winSubmissions = mysqlTable("win_submissions", {
+  id: int("id").autoincrement().primaryKey(),
+  submittedBy: int("submitted_by").notNull(),
+  winnerFactionId: int("winner_faction_id").notNull(),
+  loserFactionId: int("loser_faction_id").notNull(),
+  screenshotUrl: varchar("screenshot_url", { length: 500 }),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  approvedBy: int("approved_by"),
+  rejectionReason: text("rejection_reason"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  approvedAt: timestamp("approved_at"),
+});
+
+export type WinSubmission = typeof winSubmissions.$inferSelect;
+export type InsertWinSubmission = typeof winSubmissions.$inferInsert;

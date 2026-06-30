@@ -1,6 +1,6 @@
 import { eq, desc, asc, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, teams, matches, eloHistory, staffLogs, apiKeys, authSessions, discordWebhooks, teamInvitations, InsertTeam, InsertMatch, InsertEloHistory, InsertStaffLog, InsertApiKey, InsertAuthSession, InsertDiscordWebhook, InsertTeamInvitation } from "../drizzle/schema";
+import { InsertUser, users, teams, matches, eloHistory, staffLogs, apiKeys, authSessions, discordWebhooks, teamInvitations, factions, factionMembers, winSubmissions, InsertTeam, InsertMatch, InsertEloHistory, InsertStaffLog, InsertApiKey, InsertAuthSession, InsertDiscordWebhook, InsertTeamInvitation, InsertFaction, InsertFactionMember, InsertWinSubmission } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 import { randomBytes } from "crypto";
 
@@ -468,4 +468,92 @@ export async function deleteTeamInvitation(id: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
   await db.delete(teamInvitations).where(eq(teamInvitations.id, id));
+}
+
+
+// ─── Faction helpers ──────────────────────────────────────────────────────────
+export async function createFaction(params: { name: string; description?: string; createdBy: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(factions).values({
+    name: params.name,
+    description: params.description,
+    createdBy: params.createdBy,
+  });
+  return result;
+}
+
+export async function getAllFactions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(factions).orderBy(factions.name);
+}
+
+export async function getFactionById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(factions).where(eq(factions.id, id)).limit(1);
+  return result[0];
+}
+
+export async function addFactionMember(factionId: number, userId: number, assignedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.insert(factionMembers).values({ factionId, userId, assignedBy });
+}
+
+export async function getFactionMembers(factionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(factionMembers).where(eq(factionMembers.factionId, factionId));
+}
+
+export async function getUserFactions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(factionMembers).where(eq(factionMembers.userId, userId));
+}
+
+export async function removeFactionMember(factionId: number, userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(factionMembers).where(eq(factionMembers.factionId, factionId) && eq(factionMembers.userId, userId));
+}
+
+// ─── Win Submission helpers ───────────────────────────────────────────────────
+export async function createWinSubmission(params: { submittedBy: number; winnerFactionId: number; loserFactionId: number; screenshotUrl?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  const result = await db.insert(winSubmissions).values({
+    submittedBy: params.submittedBy,
+    winnerFactionId: params.winnerFactionId,
+    loserFactionId: params.loserFactionId,
+    screenshotUrl: params.screenshotUrl,
+  });
+  return result;
+}
+
+export async function getPendingWinSubmissions() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(winSubmissions).where(eq(winSubmissions.status, "pending")).orderBy(desc(winSubmissions.createdAt));
+}
+
+export async function approveWinSubmission(submissionId: number, approvedBy: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(winSubmissions).set({ status: "approved", approvedBy, approvedAt: new Date() }).where(eq(winSubmissions.id, submissionId));
+}
+
+export async function rejectWinSubmission(submissionId: number, rejectionReason: string) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.update(winSubmissions).set({ status: "rejected", rejectionReason }).where(eq(winSubmissions.id, submissionId));
+}
+
+export async function getWinSubmissionById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(winSubmissions).where(eq(winSubmissions.id, id)).limit(1);
+  return result[0];
 }
