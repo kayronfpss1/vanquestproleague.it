@@ -59,7 +59,16 @@ export async function getUserByOpenId(openId: string) {
 export async function getAllUsers() {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(users).orderBy(users.createdAt);
+  const allUsers = await db.select().from(users).orderBy(users.createdAt);
+  
+  // Enrich with faction members
+  const enriched = await Promise.all(
+    allUsers.map(async (u) => ({
+      ...u,
+      factionMembers: await db.select().from(factionMembers).where(eq(factionMembers.userId, u.id)),
+    }))
+  );
+  return enriched;
 }
 
 export async function updateUserRole(userId: number, role: "admin" | "user" | "staff" | "ceo") {
@@ -167,6 +176,11 @@ export async function getTeamByName(name: string) {
 export async function createTeam(name: string) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
+  
+  // Check if team already exists
+  const existing = await getTeamByName(name);
+  if (existing) return existing;
+  
   await db.insert(teams).values({ name, elo: ELO_START });
   const created = await getTeamByName(name);
   if (!created) throw new Error("Team creation failed");
