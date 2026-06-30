@@ -102,7 +102,11 @@ export default function StaffDashboard() {
         </div>
 
         {/* Content */}
+        {activeTab === "teams" && <div className="text-muted-foreground">Team management coming soon...</div>}
+        {activeTab === "matches" && <div className="text-muted-foreground">Match management coming soon...</div>}
+        {activeTab === "factions" && <div className="text-muted-foreground">Faction management coming soon...</div>}
         {activeTab === "wins" && <WinSubmissions />}
+        {activeTab === "logs" && <div className="text-muted-foreground">Staff logs coming soon...</div>}
       </div>
     </div>
   );
