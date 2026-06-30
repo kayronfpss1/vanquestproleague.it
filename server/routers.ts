@@ -471,21 +471,9 @@ export const appRouter = router({
         
         if (!winnerTeam || !loserTeam) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
         
-        // Calculate ELO
-        const eloChange = calculateEloChange(winnerTeam.elo, loserTeam.elo);
-        
-        // Update teams
-        await updateTeam(submission.winnerFactionId, {
-          wins: (winnerTeam.wins || 0) + 1,
-          elo: winnerTeam.elo + eloChange,
-          streak: Math.max(1, (winnerTeam.streak || 0) + 1),
-          bestStreak: Math.max(winnerTeam.bestStreak || 0, (winnerTeam.streak || 0) + 1),
-        });
-        await updateTeam(input.loserFactionId, {
-          losses: (loserTeam.losses || 0) + 1,
-          elo: Math.max(1, loserTeam.elo - eloChange),
-          streak: Math.min(-1, (loserTeam.streak || 0) - 1),
-        });
+        // Use addMatch to properly record the win
+        const { addMatch } = await import("./db");
+        await addMatch(winnerTeam.id, loserTeam.id);
         
         // Approve submission
         await approveWinSubmission(input.submissionId, ctx.user.id);
