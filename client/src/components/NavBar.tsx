@@ -37,7 +37,7 @@ export default function NavBar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <img src="https://i.postimg.cc/dV1szdFg/B0E7C9B8-C7D7-41F7-BE47-562605946559.png" alt="VANQUEST Pro League" className="h-12 w-auto" />
+            <div className="h-12 w-12 bg-cover bg-center" style={{backgroundImage: 'url(https://i.postimg.cc/dV1szdFg/B0E7C9B8-C7D7-41F7-BE47-562605946559.png)'}} />
             <div className="hidden sm:flex flex-col">
               <span className="font-display text-xs font-bold tracking-widest text-azure-bright leading-tight">VANQUEST</span>
               <span className="font-display text-xs font-bold tracking-widest text-azure-bright leading-tight">PRO LEAGUE</span>
