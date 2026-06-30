@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Menu, X, Trophy, Swords, Users, History, Shield, BarChart3, User } from "lucide-react";
+import { Menu, X, Trophy, Swords, Users, History, Shield, BarChart3 } from "lucide-react";
 
 const navLinks = [
   { href: "/", label: "Home", icon: Trophy },
   { href: "/leaderboard", label: "Leaderboard", icon: BarChart3 },
   { href: "/teams", label: "Teams", icon: Users },
   { href: "/matches", label: "Freeroam Recenti", icon: History },
-  { href: "/submit-win", label: "Assegnazione Win", icon: Swords },
 ];
 
 export default function NavBar() {
@@ -82,15 +81,13 @@ export default function NavBar() {
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <Link href="/profile">
-                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent border border-border hover:border-primary/50 transition-all">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-sm font-sans font-500 text-foreground">{user?.name}</span>
-                    {user?.role === "admin" && (
-                      <span className="stat-badge bg-secondary/20 text-secondary border border-secondary/30">STAFF</span>
-                    )}
-                  </button>
-                </Link>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent border border-border">
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span className="text-sm font-sans font-500 text-foreground">{user?.name}</span>
+                  {user?.role === "admin" && (
+                    <span className="stat-badge bg-secondary/20 text-secondary border border-secondary/30">STAFF</span>
+                  )}
+                </div>
                 <button
                   onClick={() => logoutMutation.mutate()}
                   className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent border border-border transition-all"
@@ -142,12 +139,6 @@ export default function NavBar() {
             ))}
             {isAuthenticated && (
               <>
-                <Link href="/profile" onClick={() => setMobileOpen(false)}>
-                  <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans font-600 tracking-wide text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all">
-                    <User className="w-4 h-4" />
-                    Profilo
-                  </button>
-                </Link>
                 <Link href="/staff" onClick={() => setMobileOpen(false)}>
                   <button className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans font-600 tracking-wide text-muted-foreground hover:text-secondary hover:bg-secondary/10 transition-all">
                     <Shield className="w-4 h-4" />

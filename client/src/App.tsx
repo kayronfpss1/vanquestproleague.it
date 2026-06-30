@@ -15,8 +15,6 @@ import AdminPanel from "./pages/AdminPanel";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import InvitationAccept from "./pages/InvitationAccept";
-import WinSubmissionPage from "./pages/WinSubmissionPage";
-import UserProfile from "./pages/UserProfile";
 
 function Router() {
   return (
@@ -33,8 +31,6 @@ function Router() {
         <Route path="/staff" component={StaffDashboard} />
         <Route path="/admin" component={AdminPanel} />
         <Route path="/invite/:token" component={InvitationAccept} />
-        <Route path="/submit-win" component={WinSubmissionPage} />
-        <Route path="/profile" component={UserProfile} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

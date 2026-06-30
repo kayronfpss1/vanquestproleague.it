@@ -419,24 +419,18 @@ export const appRouter = router({
         await logStaff(ctx, "REMOVE_FACTION_MEMBER", `Removed user ${input.userId} from faction ${input.factionId}`);
         return { success: true };
       }),
-    getUserFactions: publicProcedure
-      .input(z.object({ userId: z.number() }))
-      .query(async ({ input }) => {
-        const { getUserFactions } = await import("./db");
-        return getUserFactions(input.userId);
-      }),
   }),
 
   // ─── Win Submissions ──────────────────────────────────────────────────────────
   winSubmissions: router({
     create: protectedProcedure
-      .input(z.object({ winnerFactionId: z.number(), screenshotUrl: z.string() }))
+      .input(z.object({ winnerFactionId: z.number(), loserFactionId: z.number(), screenshotUrl: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
         const { createWinSubmission } = await import("./db");
         await createWinSubmission({
           submittedBy: ctx.user.id,
           winnerFactionId: input.winnerFactionId,
-          loserFactionId: 0, // Will be set by staff when approving
+          loserFactionId: input.loserFactionId,
           screenshotUrl: input.screenshotUrl,
         });
         return { success: true };
@@ -446,18 +440,15 @@ export const appRouter = router({
       return getPendingWinSubmissions();
     }),
     approve: staffProcedure
-      .input(z.object({ submissionId: z.number(), loserFactionId: z.number() }))
+      .input(z.object({ submissionId: z.number() }))
       .mutation(async ({ input, ctx }) => {
-        const { getWinSubmissionById, approveWinSubmission, updateTeam, getTeamById, updateWinSubmissionLoser } = await import("./db");
+        const { getWinSubmissionById, approveWinSubmission, updateTeam, getTeamById } = await import("./db");
         const submission = await getWinSubmissionById(input.submissionId);
         if (!submission) throw new TRPCError({ code: "NOT_FOUND", message: "Submission not found" });
         
-        // Update submission with loser faction
-        await updateWinSubmissionLoser(input.submissionId, input.loserFactionId);
-        
         // Get teams
         const winnerTeam = await getTeamById(submission.winnerFactionId);
-        const loserTeam = await getTeamById(input.loserFactionId);
+        const loserTeam = await getTeamById(submission.loserFactionId);
         if (!winnerTeam || !loserTeam) throw new TRPCError({ code: "NOT_FOUND", message: "Team not found" });
         
         // Calculate ELO
