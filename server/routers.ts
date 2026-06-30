@@ -457,6 +457,14 @@ export const appRouter = router({
         await logStaff(ctx, "DELETE_FACTION_ROLE", `Deleted faction role ${input.roleId}`);
         return { success: true };
       }),
+    delete: staffProcedure
+      .input(z.object({ factionId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { deleteFaction } = await import("./db");
+        await deleteFaction(input.factionId);
+        await logStaff(ctx, "DELETE_FACTION", `Deleted faction ${input.factionId}`);
+        return { success: true };
+      }),
   }),
 
   // ─── Win Submissions ──────────────────────────────────────────────────────────

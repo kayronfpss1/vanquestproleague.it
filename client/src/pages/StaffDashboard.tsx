@@ -447,6 +447,11 @@ function FactionManagement() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const deleteFaction = trpc.factions.delete.useMutation({
+    onSuccess: () => { utils.factions.list.invalidate(); toast.success("Faction deleted!"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-6">
       {/* Create Faction */}
@@ -493,12 +498,21 @@ function FactionManagement() {
                     <h4 className="font-display font-600 text-foreground">{faction.name}</h4>
                     {faction.description && <p className="text-sm text-muted-foreground">{faction.description}</p>}
                   </div>
-                  <button
-                    onClick={() => setSelectedFaction(selectedFaction === faction.id ? null : faction.id)}
-                    className="px-3 py-1 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary font-display font-600 text-sm"
-                  >
-                    {selectedFaction === faction.id ? "Hide" : "Manage"}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setSelectedFaction(selectedFaction === faction.id ? null : faction.id)}
+                      className="px-3 py-1 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary font-display font-600 text-sm"
+                    >
+                      {selectedFaction === faction.id ? "Hide" : "Manage"}
+                    </button>
+                    <button
+                      onClick={() => { if (confirm(`Sei sicuro di voler eliminare la fazione "${faction.name}"? Tutti i membri e i ruoli verranno rimossi.`)) deleteFaction.mutate({ factionId: faction.id }); }}
+                      disabled={deleteFaction.isPending}
+                      className="p-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
                 {selectedFaction === faction.id && (
                   <div className="mt-3 pt-3 border-t border-secondary/20 space-y-4">

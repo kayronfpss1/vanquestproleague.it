@@ -603,5 +603,25 @@ export async function getFactionRolesByFactionId(factionId: number) {
 export async function deleteFactionRole(roleId: number) {
   const db = await getDb();
   if (!db) throw new Error("DB not available");
-  await db.delete(factionRoles).where(eq(factionRoles.id, roleId));
+  
+  // Get the role to know which faction it belongs to
+  const role = await db.select().from(factionRoles).where(eq(factionRoles.id, roleId)).limit(1);
+  if (role.length > 0) {
+    // Note: In this schema, members are linked to factionId, not roleId directly.
+    // If we delete a role, we might want to delete the whole faction or just the role.
+    // Based on user request "eliminare i ruoli delle fazioni", we delete the role record.
+    await db.delete(factionRoles).where(eq(factionRoles.id, roleId));
+  }
+}
+
+export async function deleteFaction(factionId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  
+  // 1. Delete all members of this faction
+  await db.delete(factionMembers).where(eq(factionMembers.factionId, factionId));
+  // 2. Delete all roles of this faction
+  await db.delete(factionRoles).where(eq(factionRoles.factionId, factionId));
+  // 3. Delete the faction itself
+  await db.delete(factions).where(eq(factions.id, factionId));
 }
