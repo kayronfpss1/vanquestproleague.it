@@ -463,13 +463,13 @@ export const appRouter = router({
         
         // Update teams
         await updateTeam(submission.winnerFactionId, {
-          wins: winnerTeam.wins + 1,
+          wins: (winnerTeam.wins || 0) + 1,
           elo: winnerTeam.elo + eloChange,
           streak: Math.max(1, (winnerTeam.streak || 0) + 1),
-          bestStreak: Math.max(winnerTeam.bestStreak, (winnerTeam.streak || 0) + 1),
+          bestStreak: Math.max(winnerTeam.bestStreak || 0, (winnerTeam.streak || 0) + 1),
         });
-        await updateTeam(submission.loserFactionId, {
-          losses: loserTeam.losses + 1,
+        await updateTeam(input.loserFactionId, {
+          losses: (loserTeam.losses || 0) + 1,
           elo: Math.max(1, loserTeam.elo - eloChange),
           streak: Math.min(-1, (loserTeam.streak || 0) - 1),
         });
