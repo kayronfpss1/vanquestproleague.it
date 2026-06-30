@@ -389,6 +389,10 @@ export const appRouter = router({
       const { getAllFactions } = await import("./db");
       return getAllFactions();
     }),
+    getUserFactions: protectedProcedure.query(async ({ ctx }) => {
+      const { getUserFactions } = await import("./db");
+      return getUserFactions(ctx.user.id);
+    }),
     create: staffProcedure
       .input(z.object({ name: z.string().min(1), description: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {

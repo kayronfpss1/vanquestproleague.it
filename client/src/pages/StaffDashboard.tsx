@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { TableSkeleton } from "@/components/EsportUI";
 
-type Tab = "teams" | "matches" | "logs" | "factions" | "wins" | "assegnazione";
+type Tab = "teams" | "matches" | "logs" | "factions" | "wins";
 
 export default function StaffDashboard() {
   const { user, isAuthenticated, loading } = useAuth();
@@ -60,7 +60,6 @@ export default function StaffDashboard() {
     { id: "matches" as Tab, label: "MATCH MANAGEMENT", icon: Swords },
     { id: "factions" as Tab, label: "FACTIONS", icon: Shield },
     { id: "wins" as Tab, label: "WIN SUBMISSIONS", icon: Trophy },
-    { id: "assegnazione" as Tab, label: "ASSEGNAZIONE WIN", icon: Swords },
     { id: "logs" as Tab, label: "STAFF LOGS", icon: ClipboardList },
   ];
 
@@ -105,7 +104,6 @@ export default function StaffDashboard() {
           {activeTab === "matches" && <MatchManagement />}
           {activeTab === "factions" && <FactionManagement />}
           {activeTab === "wins" && <WinSubmissions />}
-          {activeTab === "assegnazione" && <AssegnazioneWin />}
           {activeTab === "logs" && <StaffLogs />}
         </div>
       </div>
@@ -631,104 +629,3 @@ function WinSubmissions() {
   );
 }
 
-// ─── Assegnazione Win ──────────────────────────────────────────────────────────
-function AssegnazioneWin() {
-  const { data: submissions, isLoading } = trpc.winSubmissions.getPending.useQuery();
-  const { data: factions } = trpc.factions.list.useQuery();
-  const utils = trpc.useUtils();
-
-  const approveWin = trpc.winSubmissions.approve.useMutation({
-    onSuccess: () => { utils.winSubmissions.getPending.invalidate(); toast.success("Win approvata e ELO aggiornato!"); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const rejectWin = trpc.winSubmissions.reject.useMutation({
-    onSuccess: () => { utils.winSubmissions.getPending.invalidate(); toast.success("Win rifiutata."); },
-    onError: (e: any) => toast.error(e.message),
-  });
-
-  const [rejectReason, setRejectReason] = useState<Record<number, string>>({});
-  const [selectedLoserFaction, setSelectedLoserFaction] = useState<Record<number, number>>({});
-
-  return (
-    <div className="space-y-6">
-      <div className="card-premium p-6">
-        <h3 className="text-lg font-display font-700 text-foreground mb-4 flex items-center gap-2">
-          <Swords className="w-5 h-5 text-primary" /> ASSEGNAZIONE WIN
-        </h3>
-        {isLoading ? (
-          <TableSkeleton />
-        ) : submissions && submissions.length > 0 ? (
-          <div className="space-y-4">
-            {submissions.map((sub) => {
-              const winnerFaction = factions?.find(f => f.id === sub.winnerFactionId);
-              return (
-                <div key={sub.id} className="p-4 rounded-lg bg-secondary/10 border border-secondary/20">
-                  <div className="mb-4">
-                    <p className="font-display font-600 text-foreground mb-2">
-                      {winnerFaction?.name || `Fazione ${sub.winnerFactionId}`} (VINCENTE)
-                    </p>
-                    {sub.screenshotUrl && (
-                      <a href={sub.screenshotUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline block mb-2">
-                        📸 Visualizza Screenshot
-                      </a>
-                    )}
-                    <p className="text-xs text-muted-foreground">
-                      Inviato: {new Date(sub.createdAt).toLocaleString("it-IT")}
-                    </p>
-                  </div>
-                  <div className="mb-4">
-                    <label className="text-sm font-display font-600 text-foreground mb-2 block">SELEZIONA FAZIONE PERDENTE</label>
-                    <select
-                      value={selectedLoserFaction[sub.id] || ""}
-                      onChange={(e) => setSelectedLoserFaction({ ...selectedLoserFaction, [sub.id]: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground text-sm"
-                    >
-                      <option value="">-- Scegli Fazione --</option>
-                      {factions?.filter(f => f.id !== sub.winnerFactionId).map(faction => (
-                        <option key={faction.id} value={faction.id}>
-                          {faction.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        if (!selectedLoserFaction[sub.id]) {
-                          toast.error("Seleziona la fazione perdente");
-                          return;
-                        }
-                        approveWin.mutate({ submissionId: sub.id, loserFactionId: selectedLoserFaction[sub.id] });
-                      }}
-                      disabled={approveWin.isPending || !selectedLoserFaction[sub.id]}
-                      className="flex-1 px-3 py-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 font-display font-600 text-sm disabled:opacity-50"
-                    >
-                      {approveWin.isPending ? "Approvando..." : "✓ APPROVA"}
-                    </button>
-                    <input
-                      type="text"
-                      placeholder="Motivo rifiuto..."
-                      value={rejectReason[sub.id] ?? ""}
-                      onChange={(e) => setRejectReason({ ...rejectReason, [sub.id]: e.target.value })}
-                      className="flex-1 px-3 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground text-sm placeholder-muted-foreground"
-                    />
-                    <button
-                      onClick={() => rejectWin.mutate({ submissionId: sub.id, reason: rejectReason[sub.id] || "Nessun motivo fornito" })}
-                      disabled={rejectWin.isPending}
-                      className="flex-1 px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 font-display font-600 text-sm disabled:opacity-50"
-                    >
-                      {rejectWin.isPending ? "Rifiutando..." : "✗ RIFIUTA"}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <p className="text-muted-foreground text-center py-8">Nessuna win in sospeso</p>
-        )}
-      </div>
-    </div>
-  );
-}

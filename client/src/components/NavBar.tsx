@@ -8,18 +8,27 @@ const navLinks = [
   { href: "/leaderboard", label: "Leaderboard", icon: BarChart3 },
   { href: "/teams", label: "Teams", icon: Users },
   { href: "/matches", label: "Freeroam Recenti", icon: History },
+  { href: "/submit-win", label: "Assegnazione Win", icon: Swords, requiresAuth: true, requiresFaction: true },
 ];
 
 export default function NavBar() {
   const [location] = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { data: user } = trpc.customAuth.me.useQuery();
+  const { data: userFactions } = trpc.factions.getUserFactions.useQuery(undefined, { enabled: !!user });
   const isAuthenticated = !!user;
+  const hasFaction = (userFactions && userFactions.length > 0);
   const logoutMutation = trpc.customAuth.logout.useMutation({
     onSuccess: () => { window.location.href = "/"; },
   });
 
   const isActive = (href: string) => href === "/" ? location === "/" : location.startsWith(href);
+
+  const shouldShowLink = (link: any) => {
+    if (link.requiresAuth && !isAuthenticated) return false;
+    if (link.requiresFaction && !hasFaction) return false;
+    return true;
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 backdrop-blur-xl"
@@ -37,7 +46,7 @@ export default function NavBar() {
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1">
-            {navLinks.map(({ href, label, icon: Icon }) => (
+            {navLinks.filter(shouldShowLink).map(({ href, label, icon: Icon }) => (
               <Link key={href} href={href}>
                 <button className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-sans font-600 tracking-wide transition-all duration-200 ${
                   isActive(href)
@@ -125,7 +134,7 @@ export default function NavBar() {
       {mobileOpen && (
         <div className="md:hidden border-t border-border/50 bg-background/95 backdrop-blur-xl animate-fade-in">
           <div className="container py-4 flex flex-col gap-1">
-            {navLinks.map(({ href, label, icon: Icon }) => (
+            {navLinks.filter(shouldShowLink).map(({ href, label, icon: Icon }) => (
               <Link key={href} href={href} onClick={() => setMobileOpen(false)}>
                 <button className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-sans font-600 tracking-wide transition-all ${
                   isActive(href)
