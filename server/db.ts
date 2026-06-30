@@ -599,3 +599,9 @@ export async function getFactionRolesByFactionId(factionId: number) {
   if (!db) return [];
   return db.select().from(factionRoles).where(eq(factionRoles.factionId, factionId));
 }
+
+export async function deleteFactionRole(roleId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB not available");
+  await db.delete(factionRoles).where(eq(factionRoles.id, roleId));
+}

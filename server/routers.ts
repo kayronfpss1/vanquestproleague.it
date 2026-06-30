@@ -443,6 +443,20 @@ export const appRouter = router({
         await logStaff(ctx, "REMOVE_FACTION_MEMBER", `Removed user ${input.userId} from faction ${input.factionId}`);
         return { success: true };
       }),
+    getRoles: publicProcedure
+      .input(z.object({ factionId: z.number() }))
+      .query(async ({ input }) => {
+        const { getFactionRolesByFactionId } = await import("./db");
+        return getFactionRolesByFactionId(input.factionId);
+      }),
+    deleteRole: staffProcedure
+      .input(z.object({ roleId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const { deleteFactionRole } = await import("./db");
+        await deleteFactionRole(input.roleId);
+        await logStaff(ctx, "DELETE_FACTION_ROLE", `Deleted faction role ${input.roleId}`);
+        return { success: true };
+      }),
   }),
 
   // ─── Win Submissions ──────────────────────────────────────────────────────────

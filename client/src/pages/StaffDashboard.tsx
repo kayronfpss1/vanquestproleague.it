@@ -442,6 +442,11 @@ function FactionManagement() {
     onError: (e: any) => toast.error(e.message),
   });
 
+  const deleteRole = trpc.factions.deleteRole.useMutation({
+    onSuccess: () => { utils.factions.list.invalidate(); toast.success("Role deleted!"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   return (
     <div className="space-y-6">
       {/* Create Faction */}
@@ -496,17 +501,29 @@ function FactionManagement() {
                   </button>
                 </div>
                 {selectedFaction === faction.id && (
-                  <div className="mt-3 pt-3 border-t border-secondary/20">
-                    <select
-                      value={selectedUserId ?? ""}
-                      onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                      className="w-full px-3 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground text-sm mb-2"
-                    >
-                      <option value="">Select player to add...</option>
-                      {allUsers?.map((u) => (
-                        <option key={u.id} value={u.id}>{u.username || u.name || `User ${u.id}`}</option>
-                      ))}
-                    </select>
+                  <div className="mt-3 pt-3 border-t border-secondary/20 space-y-4">
+                    {/* Roles Section */}
+                    <div>
+                      <p className="text-xs font-display font-600 text-primary mb-2 uppercase tracking-widest">Faction Roles</p>
+                      <FactionRoles factionId={faction.id} />
+                    </div>
+
+                    {/* Add Member Section */}
+                    <div>
+                      <p className="text-xs font-display font-600 text-primary mb-2 uppercase tracking-widest">Add Member</p>
+                      <select
+                        value={selectedUserId ?? ""}
+                        onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
+                        className="w-full px-3 py-2 rounded-lg bg-secondary/90 border border-secondary/30 text-background font-600 text-sm mb-2"
+                      >
+                        <option value="" className="bg-background text-foreground">Select player to add...</option>
+                        {allUsers?.map((u) => (
+                          <option key={u.id} value={u.id} className="bg-background text-foreground">
+                            {u.username || u.name || `User ${u.id}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <button
                       onClick={() => {
                         if (selectedUserId) {
@@ -634,6 +651,39 @@ function WinSubmissions() {
 }
 
 // ─── User Management ──────────────────────────────────────────────────────────
+function FactionRoles({ factionId }: { factionId: number }) {
+  const { data: roles, isLoading } = trpc.factions.getRoles.useQuery({ factionId });
+  const utils = trpc.useUtils();
+
+  const deleteRole = trpc.factions.deleteRole.useMutation({
+    onSuccess: () => {
+      utils.factions.getRoles.invalidate({ factionId });
+      toast.success("Role deleted!");
+    },
+    onError: (e: any) => toast.error(e.message),
+  });
+
+  if (isLoading) return <div className="shimmer h-8 w-full rounded" />;
+  if (!roles || roles.length === 0) return <p className="text-xs text-muted-foreground italic">No roles created for this faction.</p>;
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {roles.map((role) => (
+        <div key={role.id} className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/10 border border-secondary/30">
+          <span className="text-xs font-display font-600 text-secondary">{role.name}</span>
+          <button
+            onClick={() => { if (confirm(`Delete role "${role.name}"?`)) deleteRole.mutate({ roleId: role.id }); }}
+            disabled={deleteRole.isPending}
+            className="text-destructive hover:text-destructive/80 transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function UserManagement() {
   const { data: users, isLoading } = trpc.admin.users.useQuery();
   const { data: factions } = trpc.factions.list.useQuery();
@@ -710,11 +760,11 @@ function UserManagement() {
                     <select
                       value={selectedFaction || ""}
                       onChange={(e) => setSelectedFaction(parseInt(e.target.value))}
-                      className="flex-1 px-2 py-1 rounded text-xs bg-secondary/20 border border-secondary/30 text-foreground"
+                      className="flex-1 px-2 py-1 rounded text-xs bg-secondary/90 border border-secondary/30 text-background font-600"
                     >
-                      <option value="">Seleziona fazione...</option>
+                      <option value="" className="bg-background text-foreground">Seleziona fazione...</option>
                       {factions?.map(f => (
-                        <option key={f.id} value={f.id}>{f.name}</option>
+                        <option key={f.id} value={f.id} className="bg-background text-foreground">{f.name}</option>
                       ))}
                     </select>
                     <button
