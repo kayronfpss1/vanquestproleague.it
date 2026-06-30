@@ -530,6 +530,7 @@ function FactionManagement() {
 // ─── Win Submissions ──────────────────────────────────────────────────────────
 function WinSubmissions() {
   const { data: submissions, isLoading } = trpc.winSubmissions.getPending.useQuery();
+  const { data: factions } = trpc.factions.list.useQuery();
   const utils = trpc.useUtils();
 
   const approveWin = trpc.winSubmissions.approve.useMutation({
@@ -543,6 +544,7 @@ function WinSubmissions() {
   });
 
   const [rejectReason, setRejectReason] = useState<Record<number, string>>({});
+  const [selectedLoserFaction, setSelectedLoserFaction] = useState<Record<number, number>>({});
 
   return (
     <div className="space-y-6">
@@ -554,46 +556,70 @@ function WinSubmissions() {
           <TableSkeleton />
         ) : submissions && submissions.length > 0 ? (
           <div className="space-y-4">
-            {submissions.map((sub) => (
-              <div key={sub.id} className="p-4 rounded-lg bg-secondary/10 border border-secondary/20">
-                <div className="mb-3">
-                  <p className="font-display font-600 text-foreground">
-                    Faction {sub.winnerFactionId} vs Faction {sub.loserFactionId}
-                  </p>
-                  {sub.screenshotUrl && (
-                    <a href={sub.screenshotUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
-                      View Screenshot
-                    </a>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Submitted: {new Date(sub.createdAt).toLocaleString("it-IT")}
-                  </p>
+            {submissions.map((sub) => {
+              const winnerFaction = factions?.find(f => f.id === sub.winnerFactionId);
+              return (
+                <div key={sub.id} className="p-4 rounded-lg bg-secondary/10 border border-secondary/20">
+                  <div className="mb-4">
+                    <p className="font-display font-600 text-foreground mb-2">
+                      {winnerFaction?.name || `Faction ${sub.winnerFactionId}`} (WINNER)
+                    </p>
+                    {sub.screenshotUrl && (
+                      <a href={sub.screenshotUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline block mb-2">
+                        📸 View Screenshot
+                      </a>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Submitted: {new Date(sub.createdAt).toLocaleString("it-IT")}
+                    </p>
+                  </div>
+                  <div className="mb-4">
+                    <label className="text-sm font-display font-600 text-foreground mb-2 block">SELECT LOSER FACTION</label>
+                    <select
+                      value={selectedLoserFaction[sub.id] || ""}
+                      onChange={(e) => setSelectedLoserFaction({ ...selectedLoserFaction, [sub.id]: parseInt(e.target.value) })}
+                      className="w-full px-3 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground text-sm"
+                    >
+                      <option value="">-- Choose Faction --</option>
+                      {factions?.filter(f => f.id !== sub.winnerFactionId).map(faction => (
+                        <option key={faction.id} value={faction.id}>
+                          {faction.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (!selectedLoserFaction[sub.id]) {
+                          toast.error("Please select the loser faction");
+                          return;
+                        }
+                        approveWin.mutate({ submissionId: sub.id, loserFactionId: selectedLoserFaction[sub.id] });
+                      }}
+                      disabled={approveWin.isPending || !selectedLoserFaction[sub.id]}
+                      className="flex-1 px-3 py-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 font-display font-600 text-sm disabled:opacity-50"
+                    >
+                      {approveWin.isPending ? "Approving..." : "✓ APPROVE"}
+                    </button>
+                    <input
+                      type="text"
+                      placeholder="Rejection reason..."
+                      value={rejectReason[sub.id] ?? ""}
+                      onChange={(e) => setRejectReason({ ...rejectReason, [sub.id]: e.target.value })}
+                      className="flex-1 px-3 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground text-sm placeholder-muted-foreground"
+                    />
+                    <button
+                      onClick={() => rejectWin.mutate({ submissionId: sub.id, reason: rejectReason[sub.id] || "No reason provided" })}
+                      disabled={rejectWin.isPending}
+                      className="flex-1 px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 font-display font-600 text-sm disabled:opacity-50"
+                    >
+                      {rejectWin.isPending ? "Rejecting..." : "✗ REJECT"}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => approveWin.mutate({ submissionId: sub.id })}
-                    disabled={approveWin.isPending}
-                    className="flex-1 px-3 py-2 rounded-lg bg-green-500/20 hover:bg-green-500/30 text-green-400 font-display font-600 text-sm disabled:opacity-50"
-                  >
-                    {approveWin.isPending ? "Approving..." : "✓ Approve"}
-                  </button>
-                  <input
-                    type="text"
-                    placeholder="Rejection reason..."
-                    value={rejectReason[sub.id] ?? ""}
-                    onChange={(e) => setRejectReason({ ...rejectReason, [sub.id]: e.target.value })}
-                    className="flex-1 px-3 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground text-sm placeholder-muted-foreground"
-                  />
-                  <button
-                    onClick={() => rejectWin.mutate({ submissionId: sub.id, reason: rejectReason[sub.id] || "No reason provided" })}
-                    disabled={rejectWin.isPending}
-                    className="flex-1 px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 font-display font-600 text-sm disabled:opacity-50"
-                  >
-                    {rejectWin.isPending ? "Rejecting..." : "✗ Reject"}
-                  </button>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <p className="text-muted-foreground text-center py-8">No pending win submissions</p>
