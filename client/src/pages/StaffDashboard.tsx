@@ -43,7 +43,8 @@ export default function StaffDashboard() {
     );
   }
 
-  if (user?.role !== "admin") {
+  const validRoles = ["staff", "ceo", "admin"];
+  if (!validRoles.includes(user?.role || "")) {
     return (
       <div className="min-h-screen bg-grid pt-24 pb-16 flex items-center justify-center">
         <div className="card-premium p-10 text-center max-w-md w-full animate-scale-in">
@@ -77,7 +78,7 @@ export default function StaffDashboard() {
               <h1 className="text-3xl md:text-4xl font-display font-900 text-foreground">DASHBOARD</h1>
             </div>
           </div>
-          <p className="text-muted-foreground font-sans">Logged in as <span className="text-foreground font-600">{user.name}</span> — all actions are automatically logged.</p>
+          <p className="text-muted-foreground font-sans">Logged in as <span className="text-foreground font-600">{user?.name}</span> — all actions are automatically logged.</p>
         </div>
 
         {/* Tabs */}

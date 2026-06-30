@@ -118,7 +118,7 @@ export default function AdminPanel() {
         <div className="card-premium p-10 text-center max-w-md w-full animate-scale-in">
           <AlertTriangle className="w-16 h-16 text-destructive mx-auto mb-6" />
           <h2 className="text-2xl font-display font-800 text-foreground mb-2">ACCESS DENIED</h2>
-          <p className="text-muted-foreground font-sans">Only admins can access this panel.</p>
+          <p className="text-muted-foreground font-sans">Only administrators can access this panel.</p>
         </div>
       </div>
     );
