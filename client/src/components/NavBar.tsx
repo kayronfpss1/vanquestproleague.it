@@ -81,13 +81,15 @@ export default function NavBar() {
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated ? (
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent border border-border">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  <span className="text-sm font-sans font-500 text-foreground">{user?.name}</span>
-                  {user?.role === "admin" && (
-                    <span className="stat-badge bg-secondary/20 text-secondary border border-secondary/30">STAFF</span>
-                  )}
-                </div>
+                <Link href="/profile">
+                  <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-accent border border-border hover:border-primary/50 transition-all">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    <span className="text-sm font-sans font-500 text-foreground">{user?.name}</span>
+                    {user?.role === "admin" && (
+                      <span className="stat-badge bg-secondary/20 text-secondary border border-secondary/30">STAFF</span>
+                    )}
+                  </button>
+                </Link>
                 <button
                   onClick={() => logoutMutation.mutate()}
                   className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-accent border border-border transition-all"
