@@ -90,7 +90,7 @@ export function TierBadge({ rank }: { rank: number }) {
   
   if (rank === 1) {
     tier = "MASTER";
-    colors = "bg-yellow-500/20 text-yellow-300 border-yellow-500/40";
+    colors = "bg-purple-500/20 text-purple-300 border-purple-500/40";
   } else if (rank >= 2 && rank <= 10) {
     tier = "DIAMOND";
     colors = "bg-cyan-500/20 text-cyan-300 border-cyan-500/40";

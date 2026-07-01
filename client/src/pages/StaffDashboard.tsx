@@ -613,11 +613,11 @@ function WinSubmissions() {
                     <select
                       value={selectedLoserFaction[sub.id] || ""}
                       onChange={(e) => setSelectedLoserFaction({ ...selectedLoserFaction, [sub.id]: parseInt(e.target.value) })}
-                      className="w-full px-3 py-2 rounded-lg bg-secondary/20 border border-secondary/30 text-foreground text-sm"
+                      className="w-full px-3 py-2 rounded-lg bg-secondary/90 border border-secondary/30 text-background font-600 text-sm"
                     >
-                      <option value="">-- Choose Faction --</option>
+                      <option value="" className="bg-background text-foreground">-- Choose Faction --</option>
                       {factions?.filter(f => f.id !== sub.winnerFactionId).map(faction => (
-                        <option key={faction.id} value={faction.id}>
+                        <option key={faction.id} value={faction.id} className="bg-background text-foreground">
                           {faction.name}
                         </option>
                       ))}

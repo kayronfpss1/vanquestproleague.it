@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Trophy, Swords, Users, TrendingUp, ChevronRight, Zap, Shield } from "lucide-react";
-import { StatCard, RankBadge, EloBadge, StreakBadge, KdRatio, LiveIndicator, TableSkeleton, CardSkeleton } from "@/components/EsportUI";
+import { StatCard, RankBadge, EloBadge, StreakBadge, KdRatio, LiveIndicator, TableSkeleton, CardSkeleton, TierBadge } from "@/components/EsportUI";
 
 export default function Home() {
   const { data: top10, isLoading: loadingLb } = trpc.leaderboard.byElo.useQuery({ limit: 10 }, { refetchInterval: 15000 });
@@ -146,8 +146,11 @@ export default function Home() {
                       </div>
                       <div className="min-w-0">
                         <p className="font-display font-700 text-foreground truncate">{team.name}</p>
-                        <div className="hidden sm:block">
-                          <EloBadge elo={team.elo} />
+                        <div className="flex items-center gap-2 mt-1">
+                          <TierBadge rank={i + 1} />
+                          <div className="hidden sm:block">
+                            <EloBadge elo={team.elo} />
+                          </div>
                         </div>
                       </div>
                     </div>
